@@ -1,0 +1,10 @@
+title: SPAsqr
+description: Saddlepoint-approximated smoothed quantile regression for biobank-scale GWAS.
+theme: just-the-docs
+
+baseurl: SPAsqr.github.io/
+url: https://qiang-heng.github.io/
+
+aux_links:
+  GRAB binary (GitHub): https://github.com/qiang-heng/GRAB-feat-cpp
+  Just the Docs template: https://github.com/just-the-docs/just-the-docs-template
