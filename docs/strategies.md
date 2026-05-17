@@ -6,18 +6,6 @@ description: "Power-improving knobs in the SPAsqr pipeline."
 has_children: false
 ---
 
-<head>
-    <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
-    <script type="text/x-mathjax-config">
-        MathJax.Hub.Config({
-            tex2jax: {
-            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
-            inlineMath: [['$','$']]
-            }
-        });
-    </script>
-</head>
-
 # **Strategies for improving statistical power**
 
 SPA<sub>SQR</sub> has several power-improving knobs beyond the

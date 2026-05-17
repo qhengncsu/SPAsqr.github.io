@@ -6,18 +6,6 @@ description: "Per-marker per-tau β̂_G and SE via SPAsqr Wald mode."
 has_children: false
 ---
 
-<head>
-    <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
-    <script type="text/x-mathjax-config">
-        MathJax.Hub.Config({
-            tex2jax: {
-            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
-            inlineMath: [['$','$']]
-            }
-        });
-    </script>
-</head>
-
 # **Effect-size estimation — `--spasqr-mode wald`**
 
 The default `--spasqr-mode score` is optimized for **genome-wide
