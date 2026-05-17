@@ -10,7 +10,7 @@ has_children: false
 
 In this section we give a detailed tutorial on how to run SPA<sub>SQR</sub> association testing using a **leave-one-chromosome-out (LOCO) polygenic score (PGS)** as an offset. A LOCO PGS is a per-subject prediction of the trait built from variants on every chromosome *except* the one currently being tested. SPA<sub>SQR</sub> subtracts the chromosome-specific LOCO PGS from the trait before fitting the null smoothed quantile regression model on each chromosome, which helps control for relatedness and substantially improves the statistical power of our score tests.
 
-Although SPA<sub>SQR</sub> is a quantile GWAS method, LOCO PGS computed using *linear* GWAS software works very well for our purpose. We therefore outsource PGS construction to either [**LDAK-KVIK**](https://dougspeed.com/ldak-kvik/) or [**REGENIE**](https://rgcgithub.github.io/regenie/), then pass the resulting PGS to GRAB for per-variant association testing.
+Although SPA<sub>SQR</sub> is a quantile GWAS method, LOCO PGS computed using *linear* GWAS software works very well for our purpose. We therefore outsource PGS construction to either [**LDAK-KVIK**](https://dougspeed.com/ldak-kvik/) or [**REGENIE**](https://rgcgithub.github.io/regenie/).
 
 
 ## Data that you will need
@@ -51,13 +51,13 @@ To utilize the LOCO PGS, we also need a small text file called a **prediction li
 
 ## INT pre-transformation
 
-Before computing the PGS we recommend applying a **rank-based inverse normal transformation (INT)** to each trait's non-missing values, because in our UK Biobank analysis we find that doing so generally yields more associations than skipping it; this is likely because the LOCO PGS is more accurate when computed on an INT-transformed trait. GRAB offers a utility for applying INT:
+Before computing the PGS we recommend applying a **rank-based inverse normal transformation (INT)** to each trait's non-missing values, because in our UK Biobank analysis we find that doing so generally yields more associations than skipping it; this is likely because the LOCO PGS is more accurate when computed on an INT-transformed trait. GRAB offers a utility for applying INT on the phenotype file:
 
 ```bash
 ./grab --int-pheno --pheno pheno.txt --out pheno_int
 ```
 
-The output `pheno_int.txt` contains the normalized phenotypes:
+The output `pheno_int.txt` contains the normalized phenotypes, with missing values unchanged:
 
 ```
 $ head pheno_int.txt
@@ -70,7 +70,7 @@ fam3   sample4     0.522         1.281
 
 ## Computing the LOCO PGS with LDAK-KVIK
 
-We can compute the LOCO PGS via LDAK-KVIK step 1 with:
+We can compute LOCO PGS via LDAK-KVIK step 1 with:
 
 ```bash
 ./ldak6.2.linux \
@@ -98,7 +98,7 @@ fam1   sample1     0.124   -0.083    0.211         0.196
 fam1   sample2    -0.241    0.018   -0.135        -0.057
 ```
 
-Unlike REGENIE, LDAK-KVIK does not emit a prediction list pairing each phenotype with its LOCO PGS file. One can create `ldak_pred_list.txt` manually with a short shell snippet:
+Unlike REGENIE, LDAK-KVIK does not emit a prediction list pairing each phenotype with its LOCO PGS file. One can create `ldak_pred_list.txt` manually with the following shell snippet:
 
 ```bash
 cat > ldak_pred_list.txt <<EOF
@@ -109,13 +109,13 @@ EOF
 
 `$(pwd)` expands to the current working directory so each entry ends up as an absolute path, which is what GRAB requires.
 
-As a shortcut for the manual snippet above, GRAB also offers a utility that synthesizes `ldak_pred_list.txt` by scanning the current working directory for files ending in `.loco.prs` and matching them positionally to the columns of `pheno_int.txt`:
+GRAB also offers a utility that synthesizes `ldak_pred_list.txt` by scanning the current working directory for files ending in `.loco.prs` and starting with `ldak_step1` and matching them positionally to the columns of `pheno_int.txt`:
 
 ```bash
-./grab --make-ldak-predlist --pheno pheno_int.txt --out ldak_pred_list
+./grab --make-ldak-predlist --prefix ldak_step1 --pheno pheno_int.txt --out ldak_pred_list
 ```
 
-Under ideal conditions, the command writes `ldak_pred_list.txt` with the following content:
+The `--prefix ldak_step1` argument restricts the scan to files whose name starts with `ldak_step1`, so any unrelated LDAK runs sitting in the same directory are ignored. The command writes `ldak_pred_list.txt` with the following content:
 
 ```
 $ cat ldak_pred_list.txt
@@ -123,7 +123,6 @@ Y1    /abs/path/to/ldak_step1.step1.pheno1.loco.prs
 Y2    /abs/path/to/ldak_step1.step1.pheno2.loco.prs
 ```
 
-**But `./grab --make-ldak-predlist` may fail** — for example, when multiple LDAK runs share the same working directory and the match is ambiguous, the utility hard-errors with an explicit message, and it is recommended to fall back to the manual approach.
 
 ## Computing the LOCO PGS with REGENIE
 
@@ -234,7 +233,7 @@ With LDAK-KVIK:
     --max-threads 8
 
 # 3. Build the pred-list (or write ldak_pred_list.txt by hand)
-./grab --make-ldak-predlist --pheno pheno_int.txt --out ldak_pred_list
+./grab --make-ldak-predlist --prefix ldak_step1 --pheno pheno_int.txt --out ldak_pred_list
 
 # 4. Run SPAsqr; --pheno-transform int is the default and matches the INT-trained PGS
 ./grab --method SPAsqr \
@@ -285,7 +284,7 @@ The complete LDAK-KVIK + SPA<sub>SQR</sub> workflow without INT:
     --max-threads 8
 
 # 2. Build the pred-list (or write ldak_pred_list.txt by hand)
-./grab --make-ldak-predlist --pheno pheno.txt --out ldak_pred_list
+./grab --make-ldak-predlist --prefix ldak_step1 --pheno pheno.txt --out ldak_pred_list
 
 # 3. Run SPAsqr with --pheno-transform standardize
 ./grab --method SPAsqr \
