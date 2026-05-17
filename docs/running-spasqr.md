@@ -36,10 +36,10 @@ We assume the artifacts produced by the previous two steps:
   `Y1, Y2`.
 - `covar.txt` — covariate file with columns `covar1, covar2`.
 - `geno_sparse.grm.sp` — sparse GRM (optional but recommended).
-- `grab_predlist.txt` — pred-list pairing each phenotype with its
+- `grab_predlist.txt` — prediction list pairing each phenotype with its
   LOCO PGS file.
 
-The pred-list looks like:
+The prediction list looks like:
 
 ```
 Y1    /path/to/ldak_step1.step1.Y1.loco.prs

@@ -47,7 +47,7 @@ fam3   sample4   -1.12     0.45
 
 The FID and IID columns of `pheno.txt` and `covar.txt` should match those in `geno.fam`. These simulated data are available in our Github Repository so users can try to replicate this tutorial. Note that GRAB automatically adds an intercept to the covariates, so there is no need to include an intercept column in `covar.txt`.
 
-By the end of this workflow we will have one LOCO PGS file per trait plus a small text file called a **prediction list** — a two-column table pairing each phenotype name (column 1) with the absolute path to its LOCO PGS file (column 2). The prediction list is what GRAB reads (via the `--pred-list` argument) so that GRAB knows which PGS file is paired with which trait. This file format is a REGENIE convention that we follow here.
+To utilize the LOCO PGS, we also need a small text file called a **prediction list** — a two-column table pairing each phenotype name (column 1) with the absolute path to its LOCO PGS file (column 2). The prediction list is what GRAB reads (via the `--pred-list` argument) so that it knows which PGS file is paired with which trait. This file format is a REGENIE convention that we follow here.
 
 ## INT pre-transformation
 
@@ -168,7 +168,7 @@ Y2    /abs/path/to/regenie_step1_2.loco
 
 ## Running association testing with GRAB
 
-Once the pred-list is ready, association testing is a single `grab` call:
+Once the prediction list is ready, association testing is a single `grab` call:
 
 ```bash
 ./grab --method SPAsqr \
@@ -179,16 +179,34 @@ Once the pred-list is ready, association testing is a single `grab` call:
     --out spasqr_results
 ```
 
-The key flags are:
+The flags split into a small set you almost always set, plus a wider set you reach for as needed.
+
+**Required:**
 
 | Flag | What it does |
 | --- | --- |
-| `--bfile geno` | PLINK genotype fileset for the variants to test. PLINK 2 (`--pfile`), VCF (`--vcf`), and BGEN (`--bgen`) inputs are also supported. |
-| `--pheno pheno_int.txt` | Phenotype file — the same one fed to LDAK-KVIK / REGENIE, or its raw / INT'd counterpart used consistently. |
-| `--covar covar.txt` | Covariate file. GRAB adds an intercept automatically. |
-| `--pred-list ldak_pred_list.txt` | The pred-list we just built (or REGENIE's `regenie_step1_pred.list`). |
-| `--pheno-transform` | Defaults to `int`. Must match the transform used during PGS construction. |
-| `--out spasqr_results` | Output prefix. GRAB writes one tab-delimited file per phenotype. |
+| `--method SPAsqr` | Selects the SPA<sub>SQR</sub> method (this is also what triggers all of the `--spasqr-*` options below). |
+| `--bfile geno` | PLINK 1 genotype fileset (`geno.{bed,bim,fam}`). PLINK 2 (`--pfile PREFIX`), VCF (`--vcf FILE`), and BGEN (`--bgen FILE`) are also accepted — exactly one of the four is required. |
+| `--pheno pheno_int.txt` | Phenotype file. Use the same scale you fed to the PGS backend; in this workflow that is the INT-transformed `pheno_int.txt`. |
+| `--out spasqr_results` | Output prefix. GRAB appends `.<phenoname>.SPAsqr` so each trait gets its own tab-delimited result file. |
+
+**Frequently used optional:**
+
+| Flag | Default | What it does |
+| --- | --- | --- |
+| `--pred-list ldak_pred_list.txt` | — | Prediction list (the one we just built, or REGENIE's `regenie_step1_pred.list`). Omit to run with no LOCO offset — valid but forfeits the polygenic power gain. |
+| `--pheno-transform int` | `int` | One of `raw` / `int` / `standardize`. **Must match the transform used during PGS construction.** With `pheno_int.txt` and the INT workflow, leave it at the default. With raw `pheno.txt` fed to the backend, set this to `standardize`. |
+| `--pheno-name Y1,Y2` | all Y columns | Comma-separated list of trait columns to test. Omit to test every `Y` column found in `--pheno`. |
+| `--covar covar.txt` | — | Covariate file. GRAB adds an intercept automatically — do not include one in the file. |
+| `--covar-name covar1,covar2` | all covar columns | Comma-separated list of covariate columns to use. |
+| `--spasqr-taus 0.1,0.3,0.5,0.7,0.9` | `0.1,0.3,0.5,0.7,0.9` | Quantile levels at which to test. More $\tau$ buys power against heteroskedastic / quantile-dependent effects at the cost of more compute (max 20 levels). |
+| `--spasqr-h-scale 3` | `3` (score mode) | Bandwidth divisor: $h = \mathrm{IQR}(\tilde Y - \hat Y_{-c}) / \text{scale}$. Larger scale → narrower kernel and more "spiky" rank scores. |
+| `--maf 1e-5` | `1e-5` | Minimum minor allele frequency. |
+| `--mac 10` | `10` | Minimum minor allele count. |
+| `--geno 0.1` | `0.1` | Maximum per-variant missingness fraction. |
+| `--threads 8` | `1` | Worker threads for the per-chromosome chunk loop. Scale roughly with physical cores. |
+| `--extract snps.txt` | — | Restrict testing to the variant IDs listed in `snps.txt` (one per line). Useful for targeted re-runs. |
+| `--chr 1,2,5` | all autosomes | Comma-separated chromosomes to test. |
 
 GRAB writes one output file per phenotype:
 
@@ -227,7 +245,7 @@ With LDAK-KVIK:
     --out spasqr_results
 ```
 
-With REGENIE (no separate `--make-ldak-predlist` step — REGENIE emits its own pred-list):
+With REGENIE (no separate `--make-ldak-predlist` step — REGENIE emits its own prediction list):
 
 ```bash
 # 1. INT-transform the phenotype

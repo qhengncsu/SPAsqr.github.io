@@ -144,7 +144,7 @@ You passed an unrecognized value. Older docs / scripts may use `irn`
 
 ### `Error: phenotype 'YYY' not found in --pred-list`
 
-The pheno name in the first column of the pred-list must match the
+The pheno name in the first column of the prediction list must match the
 trait column name in your phenotype file. Check spelling and case.
 
 ### Very different `Z_tau` signs across $\tau$ at a hit
