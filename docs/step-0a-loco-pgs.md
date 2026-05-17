@@ -8,68 +8,87 @@ has_children: false
 
 # **Step 0a — LOCO polygenic scores**
 
-SPA<sub>SQR</sub> takes a chromosome-specific **leave-one-chromosome-out
-(LOCO) polygenic score** $\hat Y_{-c}$ as an *offset* in the null SQR
-fit on chromosome $c$. The LOCO PGS soaks up trans-chromosomal
-polygenic signal, sharpens the rank-score residual, and noticeably
-boosts power. It is **optional** — SPA<sub>SQR</sub> runs without it
-— but we recommend always including it.
+A **leave-one-chromosome-out (LOCO) polygenic score** soaks up
+trans-chromosomal polygenic signal so SPA<sub>SQR</sub>'s null fit on
+chromosome *c* doesn't have to model it. Passing the LOCO PGS as an
+offset via `--pred-list` noticeably boosts power. It is **optional** —
+SPA<sub>SQR</sub> runs without it — but we recommend always including
+it.
 
-We support two PGS backends, both producing a one-row-per-subject
-table with chromosome-indexed columns that GRAB reads via
-`--pred-list`:
+Two PGS backends are supported, both producing a per-subject table with
+one column per autosome that GRAB reads via `--pred-list`:
 
 - [**LDAK-KVIK**](https://dougspeed.com/kvik/) — recommended; fast,
-  GRM-aware, no external R dependencies.
+  GRM-aware, no R dependency.
 - [**REGENIE**](https://rgcgithub.github.io/regenie/) — alternative;
-  widely used, well-documented.
+  widely used.
 
-## Phenotype preprocessing — INT transform
+## The running example
 
-Before training the PGS, we apply a **rank-based inverse normal
-transformation (INT)** to the non-missing values of each trait. The
-GRAB binary ships a utility for this:
+We assume four files in your working directory:
+
+`geno.{bed,bim,fam}` — PLINK fileset of variants to test.
+
+`pheno.txt` — two-trait phenotype file:
+
+```
+$ head pheno.txt
+FID    IID         Y1     Y2
+fam1   sample1   11.8    9.1
+fam1   sample2    3.7    0.5
+fam2   sample3    9.5    2.2
+fam3   sample4    8.4   12.0
+...
+```
+
+`covar.txt` — covariate file (two covariates plus the implicit
+intercept added by GRAB):
+
+```
+$ head covar.txt
+FID    IID       covar1   covar2
+fam1   sample1   0.31     1.04
+fam1   sample2  -0.85    -0.22
+fam2   sample3   0.07     0.91
+fam3   sample4  -1.12     0.45
+...
+```
+
+By the end of Step 0a you will have one LOCO PGS file per trait and a
+small text file pairing each pheno name with the file it should use
+when SPA<sub>SQR</sub> reads them back.
+
+---
+
+## Workflow A — INT transform (recommended)
+
+### 1. INT-transform the phenotypes
+
+The GRAB binary ships a utility that inverse-normal-transforms each
+non-missing $Y$ column (Blom plotting position, average-rank ties):
 
 ```bash
 grab --int-pheno --pheno pheno.txt --out pheno_int
 ```
 
-The input `pheno.txt` is whitespace-separated with a header line
-`FID IID Y1 Y2 …`; missing entries may be `NA`, `.`, or blank. The
-output `pheno_int.txt` has the same columns and row order, with each
-$Y$ column independently INT-transformed (Blom plotting position,
-average-rank ties) on its own non-missing scope. Missing entries stay
-missing.
+This writes `pheno_int.txt` with the same FID/IID rows and the same
+column names; only the numeric $Y$ entries change:
 
 ```
-$ head pheno.txt
-FID    IID        Y1     Y2
-fam1   sample1   11.8   9.1
-fam1   sample2    3.7   0.5
-fam2   sample3     NA    2.2
-...
 $ head pheno_int.txt
-FID    IID        Y1           Y2
-fam1   sample1    1.049         0.842
-fam1   sample2   -0.299        -1.064
-fam2   sample3    NA            0.299
+FID    IID         Y1           Y2
+fam1   sample1     1.049         0.842
+fam1   sample2    -0.299        -1.064
+fam2   sample3     0.674         0.299
+fam3   sample4     0.522         1.281
 ...
 ```
 
-> **Why INT-transform first?** LDAK-KVIK and REGENIE internally
-> *standardize* the trait before PGS construction; they do not INT.
-> Pre-transforming yields PGS that live on the INT scale, which (i)
-> stabilizes rare-variant tail behavior in Step 0a and (ii) lets you
-> later pass `--pheno-transform int` (the GRAB default) so the SPA<sub>SQR</sub>
-> offset is on the same scale as the response. See the
-> [`--pheno-transform` discussion]({{ site.baseurl }}/docs/running-spasqr.html#pheno-transform)
-> for the full consistency rule.
+The two traits are transformed independently.
 
-## Option A — LDAK-KVIK (recommended)
+### 2A. LDAK-KVIK + auto-built pred-list
 
-Download the LDAK 6.2 binary from
-[dougspeed.com/kvik](https://dougspeed.com/kvik/). Then run KVIK
-Step 1 on the INT-transformed phenotype:
+Run KVIK Step 1 on the INT-transformed file:
 
 ```bash
 ldak6.2.linux \
@@ -80,32 +99,52 @@ ldak6.2.linux \
     --max-threads 8
 ```
 
-The command produces one LOCO PGS file per trait:
+LDAK writes one LOCO file per trait, indexed by position in
+`pheno_int.txt`:
 
 ```
-ldak_step1.step1.Y1.loco.prs
-ldak_step1.step1.Y2.loco.prs
+ldak_step1.step1.pheno1.loco.prs       # for Y1
+ldak_step1.step1.pheno2.loco.prs       # for Y2
 ```
 
-Each file has one row per subject with the schema
+Each file has one row per subject:
 
 ```
-FID    IID    Chr1    Chr2    ...    Chr22
+$ head -3 ldak_step1.step1.pheno1.loco.prs
+FID    IID         Chr1     Chr2     Chr3   ...   Chr22
+fam1   sample1     0.124   -0.083    0.211         0.196
+fam1   sample2    -0.241    0.018   -0.135        -0.057
+...
 ```
 
-where `ChrK` is the polygenic score predicted using all variants
-*except* those on chromosome `K`. GRAB reads these columns directly
-via `--pred-list`.
+`ChrK` is the polygenic score using all variants **except** chromosome
+*K*. Note that the LDAK output uses `pheno1` / `pheno2` (positional),
+not `Y1` / `Y2`, so you can't pass the files directly to
+`--pred-list` — you need to map each column name to the right file.
+GRAB ships a utility that does this for you:
 
-> **Threading caveat.** `--max-threads` should not exceed the number
-> of physical CPU cores. Oversubscription causes thread contention and
-> can slow Step 1 down by an order of magnitude.
+```bash
+grab --make-ldak-predlist --pheno pheno_int.txt --out grab_predlist
+```
 
-## Option B — REGENIE
+It reads the column names from `pheno_int.txt`, scans the current
+directory for LDAK Step 1 outputs matching the trait count, and writes
+`grab_predlist.txt`:
 
-Download REGENIE from
-[rgcgithub.github.io/regenie](https://rgcgithub.github.io/regenie/).
-Then run REGENIE Step 1 on the INT-transformed phenotype:
+```
+$ cat grab_predlist.txt
+Y1    /abs/path/to/ldak_step1.step1.pheno1.loco.prs
+Y2    /abs/path/to/ldak_step1.step1.pheno2.loco.prs
+```
+
+If anything is off — no LDAK output in the directory, two ambiguous
+LDAK runs side-by-side, duplicate Y column names in the pheno header,
+or a path containing whitespace — the utility hard-errors with a
+specific message instead of writing a broken file.
+
+### 2B. REGENIE + native pred-list
+
+Run REGENIE Step 1 on the same INT-transformed file:
 
 ```bash
 regenie \
@@ -118,49 +157,98 @@ regenie \
     --out regenie_step1
 ```
 
-The command produces `regenie_step1.list` plus per-trait LOCO blup
-files
-```
-regenie_step1_1.loco
-regenie_step1_2.loco
-```
-each with one row per subject and chromosome columns analogous to the
-LDAK output. REGENIE expects an integer trait index in
-`regenie_step1.list`, not a name; GRAB resolves this when you provide
-the `--pred-list` (see below).
-
-## The `--pred-list` file
-
-Whichever backend you used, you write a small text file telling GRAB
-which phenotype is paired with which LOCO PGS file (one row per
-phenotype):
+REGENIE produces a per-trait `.loco` file plus its own native pred-list:
 
 ```
-Y1    /path/to/ldak_step1.step1.Y1.loco.prs
-Y2    /path/to/ldak_step1.step1.Y2.loco.prs
+regenie_step1_1.loco         # for Y1
+regenie_step1_2.loco         # for Y2
+regenie_step1_pred.list      # pairs each name with its .loco path
 ```
 
-The pheno name in column 1 **must** match the column name in your
-phenotype file (and the `--pheno-name` value you pass to
-`grab --method SPAsqr`). Column 2 is the absolute path to the LOCO
-PGS file. The same format works for both LDAK-KVIK and REGENIE
-outputs.
+`regenie_step1_pred.list` is already in the format GRAB wants:
 
-You'll pass this file to SPA<sub>SQR</sub> via `--pred-list` in
-[Step 1–2]({{ site.baseurl }}/docs/running-spasqr.html).
+```
+$ cat regenie_step1_pred.list
+Y1    /abs/path/to/regenie_step1_1.loco
+Y2    /abs/path/to/regenie_step1_2.loco
+```
+
+so you can pass it directly to `grab --method SPAsqr --pred-list ...` —
+no rewriting needed.
+
+### 3. Match `--pheno-transform`
+
+INT is GRAB's default, so when you reach
+[Step 1–2]({{ site.baseurl }}/docs/running-spasqr.html) you don't have
+to pass `--pheno-transform` explicitly. You may also feed
+`pheno.txt` (raw) instead of `pheno_int.txt` to SPA<sub>SQR</sub> — GRAB
+will INT internally and produce identical results.
+
+---
+
+## Workflow B — standardize (skip the INT step)
+
+If you don't want to pre-INT, you can give either LDAK-KVIK or REGENIE
+your **raw** phenotype directly and ask GRAB to standardize on the same
+scale. Both backends *already* standardize internally before building
+the PGS, so the LOCO PGS comes out on the standardized scale of your
+raw $Y$ either way.
+
+### 1. Build the LOCO PGS on raw `pheno.txt`
+
+LDAK-KVIK:
+
+```bash
+ldak6.2.linux \
+    --kvik-step1 ldak_step1 \
+    --bfile geno \
+    --pheno pheno.txt --mpheno ALL \
+    --covar covar.txt \
+    --max-threads 8
+grab --make-ldak-predlist --pheno pheno.txt --out grab_predlist
+```
+
+REGENIE:
+
+```bash
+regenie \
+    --step 1 \
+    --bed geno \
+    --phenoFile pheno.txt --phenoColList Y1,Y2 \
+    --covarFile covar.txt --covarColList covar1,covar2 \
+    --bsize 1000 \
+    --lowmem --lowmem-prefix tmp_rg \
+    --out regenie_step1
+```
+
+### 2. Match `--pheno-transform`
+
+In Step 1–2 you pass `--pheno-transform standardize`. GRAB then
+centres and unit-scales the supplied $Y$ to match the scale of the
+LOCO PGS the backend produced.
+
+> **Why this works without explicit pre-standardization.** Both
+> LDAK-KVIK and REGENIE re-centre and unit-scale the trait you give
+> them before fitting the PGS, regardless of its incoming distribution.
+> Pre-standardizing `pheno.txt` would be a no-op for the PGS; the
+> useful pre-transform is INT (Workflow A), which changes the
+> *shape* of the distribution, not just its scale.
+
+---
 
 ## When to skip Step 0a
 
 If your cohort is too small to train a useful PGS (say,
-$n \lesssim 10^4$), or if you only want a quick first-pass run,
-**omit** `--pred-list` and SPA<sub>SQR</sub> will fit the null SQR
-model with no offset. You forfeit the polygenic power gain but
-everything else still works.
+*n* ≲ 10⁴), or if you just want a quick first pass, omit `--pred-list`
+when calling `grab --method SPAsqr`. SPA<sub>SQR</sub> will fit the
+null SQR model with no offset — you lose the polygenic power gain but
+everything else still works, and the `--pheno-transform` consistency
+rule no longer constrains you.
 
-> **Note**
-> - The same `pheno_int.txt` should be passed to both Step 0a *and*
->   `grab --method SPAsqr`. GRAB will apply
->   `--pheno-transform int` internally, which is idempotent on an
->   already-INT'd column — so passing either `pheno.txt` or
->   `pheno_int.txt` to SPA<sub>SQR</sub> gives the same result, provided the
->   chosen transform matches what the PGS was trained on.
+> **Threading caveat for LDAK-KVIK.** `--max-threads` should not exceed
+> the number of physical CPU cores. Oversubscription causes thread
+> contention and can slow Step 1 down by an order of magnitude.
+
+You'll feed the resulting `grab_predlist.txt` (or
+`regenie_step1_pred.list`) to SPA<sub>SQR</sub> via `--pred-list` in
+[Step 1–2]({{ site.baseurl }}/docs/running-spasqr.html).
