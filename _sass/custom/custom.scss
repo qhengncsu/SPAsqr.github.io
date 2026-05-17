@@ -4,15 +4,14 @@
 }
 
 // Visually distinguish shell-command blocks (```bash) from file-content
-// or program-output blocks (plain ```). Just-the-docs wraps fenced blocks
-// in a <div class="language-XXX highlighter-rouge"> container, which we
-// target here with a coloured left border and a subtle background tint.
+// or program-output blocks (plain ```). We keep just-the-docs's own
+// background and padding, and only add a thin coloured accent on the
+// left so the two block kinds are easy to tell apart without looking
+// "highlighted" or "callout-y".
 .main-content .language-bash.highlighter-rouge {
-  border-left: 4px solid #2e74b5; // blue band — "shell command"
-  background-color: #f3f7fb;
+  border-left: 3px solid #4a86c5; // muted blue — shell command you type
 }
 
 .main-content .language-plaintext.highlighter-rouge {
-  border-left: 4px solid #d4a017; // amber band — "file content / output"
-  background-color: #fdf8ec;
+  border-left: 3px solid #c7a857; // muted amber — file content / output
 }

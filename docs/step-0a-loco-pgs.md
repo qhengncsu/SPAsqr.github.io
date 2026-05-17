@@ -46,7 +46,7 @@ fam3   sample4   -1.12     0.45
 
 The FID and IID columns of `pheno.txt` and `covar.txt` should match those in `geno.fam`. These simulated data are available in our Github Repository so users can try to replicate this tutorial. Note that GRAB automatically adds an intercept to the covariates, so there is no need to include an intercept column in `covar.txt`.
 
-By the end of Step 0a we will have one LOCO PGS file per trait plus a small text file called a **prediction list** — a two-column table pairing each phenotype name (column 1) with the absolute path to its LOCO PGS file (column 2). The prediction list is what GRAB reads (via the `--pred-list` argument) to know which PGS to subtract from which trait. This file format is a REGENIE convention that we follow here.
+By the end of Step 0a we will have one LOCO PGS file per trait plus a small text file called a **prediction list** — a two-column table pairing each phenotype name (column 1) with the absolute path to its LOCO PGS file (column 2). The prediction list is what GRAB reads (via the `--pred-list` argument) so that GRAB knows which PGS file is paired with which trait. This file format is a REGENIE convention that we follow here.
 
 ## INT pre-transformation
 
@@ -124,6 +124,32 @@ Y2    /abs/path/to/ldak_step1.step1.pheno2.loco.prs
 
 **But `grab --make-ldak-predlist` may fail** — for example, when multiple LDAK runs share the same working directory and the match is ambiguous, the utility hard-errors with an explicit message, and it is recommended to fall back to the manual approach.
 
+Putting it all together, the complete LDAK-KVIK + SPA<sub>SQR</sub> workflow with INT looks like:
+
+```bash
+# 1. INT-transform the phenotype
+grab --int-pheno --pheno pheno.txt --out pheno_int
+
+# 2. Train the LOCO PGS on the INT-transformed Y
+ldak6.2.linux \
+    --kvik-step1 ldak_step1 \
+    --bfile geno \
+    --pheno pheno_int.txt --mpheno ALL \
+    --covar covar.txt \
+    --max-threads 8
+
+# 3. Build the pred-list (or write ldak_pred_list.txt by hand)
+grab --make-ldak-predlist --pheno pheno_int.txt --out ldak_pred_list
+
+# 4. Run SPAsqr; --pheno-transform int is the default and matches the INT-trained PGS
+grab --method SPAsqr \
+    --bfile geno \
+    --pheno pheno_int.txt \
+    --covar covar.txt \
+    --pred-list ldak_pred_list.txt \
+    --out spasqr_results
+```
+
 ## Computing the LOCO PGS with REGENIE
 
 We may also compute LOCO PGS via REGENIE Step 1:
@@ -163,6 +189,30 @@ Unlike with LDAK-KVIK, REGENIE produces `regenie_step1_pred.list` which can be p
 $ cat regenie_step1_pred.list
 Y1    /abs/path/to/regenie_step1_1.loco
 Y2    /abs/path/to/regenie_step1_2.loco
+```
+
+Putting it all together, the complete REGENIE + SPA<sub>SQR</sub> workflow with INT looks like:
+
+```bash
+# 1. INT-transform the phenotype
+grab --int-pheno --pheno pheno.txt --out pheno_int
+
+# 2. Train the LOCO PGS on the INT-transformed Y
+regenie \
+    --step 1 \
+    --bed geno \
+    --phenoFile pheno_int.txt \
+    --covarFile covar.txt \
+    --bsize 1000 \
+    --out regenie_step1
+
+# 3. Run SPAsqr with REGENIE's native pred-list; --pheno-transform int is the default
+grab --method SPAsqr \
+    --bfile geno \
+    --pheno pheno_int.txt \
+    --covar covar.txt \
+    --pred-list regenie_step1_pred.list \
+    --out spasqr_results
 ```
 
 
