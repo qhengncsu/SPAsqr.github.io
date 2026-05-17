@@ -30,7 +30,7 @@ supports sparse GRM construction natively. It is substantially faster
 than GCTA and ships as a single binary:
 
 ```bash
-plink2 \
+./plink2 \
     --bfile geno \
     --maf 0.01 \
     --make-grm-sparse 0.05 \
@@ -63,8 +63,8 @@ auto-detects the companion `.grm.id` file based on the prefix.
 > `--make-grm-sparse` to reduce GRM bias:
 >
 > ```bash
-> plink2 --bfile geno --indep-pairwise 500 50 0.2 --out prune
-> plink2 --bfile geno --extract prune.prune.in --maf 0.01 \
+> ./plink2 --bfile geno --indep-pairwise 500 50 0.2 --out prune
+> ./plink2 --bfile geno --extract prune.prune.in --maf 0.01 \
 >        --make-grm-sparse 0.05 --threads 8 --out geno_sparse
 > ```
 
@@ -73,8 +73,8 @@ auto-detects the companion `.grm.id` file based on the prefix.
 GCTA's sparse GRM works the same way:
 
 ```bash
-gcta64 --bfile geno --maf 0.01 --make-grm --threads 8 --out geno_grm
-gcta64 --grm geno_grm --make-bK-sparse 0.05 --out geno_sparse
+./gcta64 --bfile geno --maf 0.01 --make-grm --threads 8 --out geno_grm
+./gcta64 --grm geno_grm --make-bK-sparse 0.05 --out geno_sparse
 ```
 
 GCTA's `.grm.sp` output has the **same three-column schema** as PLINK

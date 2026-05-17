@@ -53,7 +53,7 @@ Restrict to a set of GWAS hits (one ID per line in `hits.txt`) and
 re-run in Wald mode:
 
 ```bash
-grab --method SPAsqr \
+./grab --method SPAsqr \
      --spasqr-mode wald \
      --bfile geno \
      --pheno pheno_int.txt --pheno-name Y1 \

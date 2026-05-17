@@ -1,12 +1,12 @@
 ---
 layout: default
-title: Step 0a — LOCO polygenic scores
+title: "Workflow 1: LOCO PGS + SPAsqr"
 nav_order: 3
-description: "Train leave-one-chromosome-out polygenic scores with LDAK-KVIK or REGENIE, then pair them with GRAB via a pred-list."
+description: "End-to-end recipe for running SPAsqr with a LOCO polygenic score (without a sparse GRM)."
 has_children: false
 ---
 
-# **Step 0a — LOCO polygenic scores**
+# **Workflow 1: LOCO PGS + SPA<sub>SQR</sub>**
 
 A **leave-one-chromosome-out (LOCO) polygenic score (PGS)** is a per-subject prediction of the trait built from variants on every chromosome *except* the one currently being tested. SPA<sub>SQR</sub> uses LOCO PGS as an offset before fitting the null smoothed quantile regression model on each chromosome. This helps us better control for relatedness and also substantially improves the statistical power of our score tests. Although SPA<sub>SQR</sub> is a quantile GWAS method, LOCO PGS computed using linear GWAS software such as [**LDAK-KVIK**](https://dougspeed.com/ldak-kvik/) and [**REGENIE**](https://rgcgithub.github.io/regenie/) work very well for our purpose. Thus, SPA<sub>SQR</sub> outsources the complex task of PGS construction to existing software.
 
@@ -46,14 +46,14 @@ fam3   sample4   -1.12     0.45
 
 The FID and IID columns of `pheno.txt` and `covar.txt` should match those in `geno.fam`. These simulated data are available in our Github Repository so users can try to replicate this tutorial. Note that GRAB automatically adds an intercept to the covariates, so there is no need to include an intercept column in `covar.txt`.
 
-By the end of Step 0a we will have one LOCO PGS file per trait plus a small text file called a **prediction list** — a two-column table pairing each phenotype name (column 1) with the absolute path to its LOCO PGS file (column 2). The prediction list is what GRAB reads (via the `--pred-list` argument) so that GRAB knows which PGS file is paired with which trait. This file format is a REGENIE convention that we follow here.
+By the end of this workflow we will have one LOCO PGS file per trait plus a small text file called a **prediction list** — a two-column table pairing each phenotype name (column 1) with the absolute path to its LOCO PGS file (column 2). The prediction list is what GRAB reads (via the `--pred-list` argument) so that GRAB knows which PGS file is paired with which trait. This file format is a REGENIE convention that we follow here.
 
 ## INT pre-transformation
 
 Before computing the PGS we recommend applying a **rank-based inverse normal transformation (INT)** to each trait's non-missing values, because in our UK Biobank analysis we find that doing so generally yields more associations than skipping it; this is likely because the LOCO PGS is more accurate when computed on an INT-transformed trait. GRAB offers a utility for applying INT:
 
 ```bash
-grab --int-pheno --pheno pheno.txt --out pheno_int
+./grab --int-pheno --pheno pheno.txt --out pheno_int
 ```
 
 The output `pheno_int.txt` contains the normalized phenotypes:
@@ -72,7 +72,7 @@ fam3   sample4     0.522         1.281
 We can compute the LOCO PGS via LDAK-KVIK step 1 with:
 
 ```bash
-ldak6.2.linux \
+./ldak6.2.linux \
     --kvik-step1 ldak_step1 \
     --bfile geno \
     --pheno pheno_int.txt \
@@ -111,7 +111,7 @@ EOF
 As a shortcut for the manual snippet above, GRAB also offers a utility that synthesizes `ldak_pred_list.txt` by scanning the current working directory for files ending in `.loco.prs` and matching them positionally to the columns of `pheno_int.txt`:
 
 ```bash
-grab --make-ldak-predlist --pheno pheno_int.txt --out ldak_pred_list
+./grab --make-ldak-predlist --pheno pheno_int.txt --out ldak_pred_list
 ```
 
 Under ideal conditions, the command writes `ldak_pred_list.txt` with the following content:
@@ -122,16 +122,16 @@ Y1    /abs/path/to/ldak_step1.step1.pheno1.loco.prs
 Y2    /abs/path/to/ldak_step1.step1.pheno2.loco.prs
 ```
 
-**But `grab --make-ldak-predlist` may fail** — for example, when multiple LDAK runs share the same working directory and the match is ambiguous, the utility hard-errors with an explicit message, and it is recommended to fall back to the manual approach.
+**But `./grab --make-ldak-predlist` may fail** — for example, when multiple LDAK runs share the same working directory and the match is ambiguous, the utility hard-errors with an explicit message, and it is recommended to fall back to the manual approach.
 
 Putting it all together, the complete LDAK-KVIK + SPA<sub>SQR</sub> workflow with INT looks like:
 
 ```bash
 # 1. INT-transform the phenotype
-grab --int-pheno --pheno pheno.txt --out pheno_int
+./grab --int-pheno --pheno pheno.txt --out pheno_int
 
 # 2. Train the LOCO PGS on the INT-transformed Y
-ldak6.2.linux \
+./ldak6.2.linux \
     --kvik-step1 ldak_step1 \
     --bfile geno \
     --pheno pheno_int.txt --mpheno ALL \
@@ -139,10 +139,10 @@ ldak6.2.linux \
     --max-threads 8
 
 # 3. Build the pred-list (or write ldak_pred_list.txt by hand)
-grab --make-ldak-predlist --pheno pheno_int.txt --out ldak_pred_list
+./grab --make-ldak-predlist --pheno pheno_int.txt --out ldak_pred_list
 
 # 4. Run SPAsqr; --pheno-transform int is the default and matches the INT-trained PGS
-grab --method SPAsqr \
+./grab --method SPAsqr \
     --bfile geno \
     --pheno pheno_int.txt \
     --covar covar.txt \
@@ -155,7 +155,7 @@ grab --method SPAsqr \
 We may also compute LOCO PGS via REGENIE Step 1:
 
 ```bash
-regenie \
+./regenie \
     --step 1 \
     --bed geno \
     --phenoFile pheno_int.txt \
@@ -195,10 +195,10 @@ Putting it all together, the complete REGENIE + SPA<sub>SQR</sub> workflow with 
 
 ```bash
 # 1. INT-transform the phenotype
-grab --int-pheno --pheno pheno.txt --out pheno_int
+./grab --int-pheno --pheno pheno.txt --out pheno_int
 
 # 2. Train the LOCO PGS on the INT-transformed Y
-regenie \
+./regenie \
     --step 1 \
     --bed geno \
     --phenoFile pheno_int.txt \
@@ -207,7 +207,7 @@ regenie \
     --out regenie_step1
 
 # 3. Run SPAsqr with REGENIE's native pred-list; --pheno-transform int is the default
-grab --method SPAsqr \
+./grab --method SPAsqr \
     --bfile geno \
     --pheno pheno_int.txt \
     --covar covar.txt \

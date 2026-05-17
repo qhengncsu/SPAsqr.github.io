@@ -59,7 +59,7 @@ Older versions accepted `irn`; current versions accept only `int`.
 Both are optional. Recommendation:
 
 - **LOCO PGS** — yes, almost always. The power gain is large and the
-  cost is one Step 0a run per trait.
+  cost is one Workflow 1 run per trait.
 - **Sparse GRM** — yes if the cohort contains close relatives.
   Skipping when relatives are present causes inflation in the tail.
 

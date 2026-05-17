@@ -14,10 +14,9 @@ well-calibrated even under heavy-tailed or skewed phenotypes.
 
 The pipeline is:
 
-1. **Step 0a — LOCO polygenic scores** via LDAK-KVIK (recommended) or
-   REGENIE.
+1. **Workflow 1 — LOCO PGS + SPAsqr** via LDAK-KVIK or REGENIE.
 
-2. **Step 0b — Sparse GRM** (optional) via PLINK 2 `--make-grm-sparse`
+2. **Workflow 2 — LOCO PGS + GRM + SPAsqr** (optional GRM) via PLINK 2 `--make-grm-sparse`
    (preferred since late 2025) or GCTA.
 
 3. **Steps 1–2 — Run `grab --method SPAsqr`.** Reads phenotype +

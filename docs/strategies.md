@@ -14,8 +14,8 @@ sections that follow give detail.
 
 | Strategy | When it helps | Cost |
 | -------- | ------------- | ---- |
-| LOCO polygenic score offset | Always — substantial gain on polygenic traits | One Step 0a run per trait |
-| Sparse GRM for variance calibration | Cohorts with non-trivial relatedness | One Step 0b run per cohort |
+| LOCO polygenic score offset | Always — substantial gain on polygenic traits | One Workflow 1 run per trait |
+| Sparse GRM for variance calibration | Cohorts with non-trivial relatedness | One sparse-GRM run per cohort |
 | INT pre-transform on Y | Heavy-tailed / skewed traits, rare variants | Negligible |
 | Wider $\tau$ grid | Heteroskedastic / dispersion effects | Linear in `n_taus`, score mode is fast |
 | Smaller bandwidth (`--spasqr-h-scale` ↑) | Sharper tail discrimination at small $n$ | More iterations to converge |
@@ -33,7 +33,7 @@ by roughly a factor of $\sqrt{1 - h^2(1-1/22)}$. For trait
 architectures with $h^2 > 0.2$ this typically corresponds to a
 1.2–1.5× boost in effective sample size.
 
-**Action.** Always run [Step 0a]({{ site.baseurl }}/docs/step-0a-loco-pgs.html)
+**Action.** Always run [Workflow 1]({{ site.baseurl }}/docs/workflow-1.html)
 and pass `--pred-list` to SPA<sub>SQR</sub> unless your cohort is too
 small ($n \lesssim 10^4$) to train a useful PGS.
 
@@ -69,10 +69,10 @@ saddlepoint-approximation accuracy at rare variants. The transform is
 applied **per phenotype, per non-missing scope**:
 
 ```bash
-grab --int-pheno --pheno pheno.txt --out pheno_int
+./grab --int-pheno --pheno pheno.txt --out pheno_int
 ```
 
-Then feed `pheno_int.txt` to **both** Step 0a and Step 1–2 (and leave
+Then feed `pheno_int.txt` to **both** Workflow 1 and Step 1–2 (and leave
 `--pheno-transform` at the default `int`). Because INT of an
 already-INT'd column is idempotent, passing the raw `pheno.txt` to
 SPA<sub>SQR</sub> with `--pheno-transform int` gives an identical

@@ -54,18 +54,18 @@ a portable distribution binary.
 ```
 
 If `--help SPAsqr` prints the SPA<sub>SQR</sub> help screen, you're ready to move
-on to [Step 0a — LOCO polygenic scores]({{ site.baseurl }}/docs/step-0a-loco-pgs.html).
+on to [Workflow 1: LOCO PGS + SPA<sub>SQR</sub>]({{ site.baseurl }}/docs/workflow-1.html).
 
 ## External tools used by the pipeline
 
 GRAB itself has no runtime dependencies, but the surrounding pipeline
 calls out to two external programs that you install separately:
 
-- [**LDAK-KVIK**](https://dougspeed.com/kvik/) (or
+- [**LDAK-KVIK**](https://dougspeed.com/ldak-kvik/) (or
   [REGENIE](https://rgcgithub.github.io/regenie/)) — for LOCO
-  polygenic scores in Step 0a.
+  polygenic scores in Workflow 1.
 - [**PLINK 2**](https://www.cog-genomics.org/plink/2.0/) — for sparse
-  GRM construction in Step 0b. Required only if you want a
+  GRM construction (used in Workflow 2). Required only if you want a
   GRM-aware variance correction.
 
 Both are downloaded as single binaries; no source build needed.

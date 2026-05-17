@@ -53,9 +53,9 @@ unbalanced traits. Per-$\tau$ $p$-values are combined into a single
 
 ## Pipeline
 
-1. **Step 0a — LOCO polygenic scores.** Train chromosome-specific PGS
+1. **Workflow 1 — LOCO polygenic scores.** Train chromosome-specific PGS
    on the phenotype using
-   [LDAK-KVIK](https://dougspeed.com/kvik/) (recommended) or
+   [LDAK-KVIK](https://dougspeed.com/ldak-kvik/) or
    [REGENIE](https://rgcgithub.github.io/regenie/). Optional — but
    strongly recommended for power.
 
@@ -78,7 +78,7 @@ unbalanced traits. Per-$\tau$ $p$-values are combined into a single
 ## Where to go next
 
 - [Installation]({{ site.baseurl }}/docs/installation.html) — building the GRAB binary.
-- [Step 0a — LOCO polygenic scores]({{ site.baseurl }}/docs/step-0a-loco-pgs.html)
+- [Workflow 1: LOCO PGS + SPA<sub>SQR</sub>]({{ site.baseurl }}/docs/workflow-1.html)
 - [Step 0b — Sparse GRM]({{ site.baseurl }}/docs/step-0b-sparse-grm.html)
 - [Running SPA<sub>SQR</sub>]({{ site.baseurl }}/docs/running-spasqr.html) — the main usage page.
 - [Effect-size estimation]({{ site.baseurl }}/docs/effect-size-estimation.html) — Wald mode.

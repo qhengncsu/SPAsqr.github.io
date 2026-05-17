@@ -8,7 +8,7 @@ has_children: false
 
 # **Running SPA<sub>SQR</sub>**
 
-A single `grab --method SPAsqr` call:
+A single `./grab --method SPAsqr` call:
 
 1. Reads the phenotype + covariates and applies the chosen
    `--pheno-transform`.
@@ -49,7 +49,7 @@ Y2    /path/to/ldak_step1.step1.Y2.loco.prs
 The full command:
 
 ```bash
-grab --method SPAsqr \
+./grab --method SPAsqr \
      --bfile geno \
      --pheno pheno_int.txt --pheno-name Y1,Y2 \
      --covar covar.txt --covar-name covar1,covar2 \
@@ -88,7 +88,7 @@ each with the schema described in [Output format](#output-format).
 | ---- | ------- | ------- |
 | `--pheno-name` | (all) | Comma-separated list of trait columns to test. Omitting tests every Y column. |
 | `--covar` + `--covar-name` | — | Covariate file + columns. An intercept is added automatically. |
-| `--pred-list` | — | LOCO PGS file pairing. See [Step 0a]({{ site.baseurl }}/docs/step-0a-loco-pgs.html). |
+| `--pred-list` | — | LOCO PGS file pairing. See [Workflow 1]({{ site.baseurl }}/docs/workflow-1.html). |
 | `--sp-grm-plink2` | — | Sparse GRM (`.grm.sp`). See [Step 0b]({{ site.baseurl }}/docs/step-0b-sparse-grm.html). |
 | `--spasqr-taus` | `0.1,0.3,0.5,0.7,0.9` | Quantile grid. Max 20 values. |
 | `--spasqr-h-scale` | `3` (score) / `10` (wald) | Bandwidth divisor: $h = \mathrm{IQR}(Y)/k$. Smaller $k$ ⇒ larger $h$ ⇒ smoother. |
@@ -133,7 +133,7 @@ that the offset and the response live on the same scale:
 | Pre-standardized $Y$                  | `--pheno-transform standardize` |
 
 We recommend the **INT path** documented in
-[Step 0a]({{ site.baseurl }}/docs/step-0a-loco-pgs.html): pre-INT with
+[Workflow 1]({{ site.baseurl }}/docs/workflow-1.html): pre-INT with
 `grab --int-pheno`, feed `pheno_int.txt` to LDAK-KVIK, and leave
 `--pheno-transform` at its default.
 
