@@ -10,7 +10,7 @@ has_children: false
 
 In this section we give a detailed tutorial on how to run SPA<sub>SQR</sub> association testing using a **leave-one-chromosome-out (LOCO) polygenic score (PGS)** as an offset. A LOCO PGS is a per-subject prediction of the trait built from variants on every chromosome *except* the one currently being tested. SPA<sub>SQR</sub> subtracts the chromosome-specific LOCO PGS from the trait before fitting the null smoothed quantile regression model on each chromosome, which helps control for relatedness and substantially improves the statistical power of our score tests.
 
-Although SPA<sub>SQR</sub> is a quantile GWAS method, LOCO PGS computed using *linear* GWAS software works very well for our purpose. We therefore outsource PGS construction to either [**LDAK-KVIK**](https://dougspeed.com/ldak-kvik/) or [**REGENIE**](https://rgcgithub.github.io/regenie/).
+Although SPA<sub>SQR</sub> is a quantile GWAS method, LOCO PGS computed using *linear* GWAS software work very well for our purpose. We therefore outsource PGS construction to either [**LDAK-KVIK**](https://dougspeed.com/ldak-kvik/) or [**REGENIE**](https://rgcgithub.github.io/regenie/).
 
 
 ## Data that you will need
@@ -51,7 +51,7 @@ To utilize the LOCO PGS, we also need a small text file called a **prediction li
 
 ## INT pre-transformation
 
-Before computing the PGS we recommend applying a **rank-based inverse normal transformation (INT)** to each trait's non-missing values, because in our UK Biobank analysis we find that doing so generally yields more associations than skipping it; this is likely because the LOCO PGS is more accurate when computed on an INT-transformed trait. GRAB offers a utility for applying INT on the phenotype file:
+Before computing the PGS we recommend applying a **rank-based inverse normal transformation (INT)** to each trait's non-missing values, because in our UK Biobank analysis we find that doing so generally yields more associations than skipping it; this is likely because the LOCO PGS are more accurate when computed on an INT-transformed trait. GRAB offers a utility for applying INT on the phenotype file:
 
 ```bash
 ./grab --int-pheno --pheno pheno.txt --out pheno_int
@@ -158,8 +158,8 @@ Unlike with LDAK-KVIK, REGENIE produces `regenie_step1_pred.list` which can be p
 
 ```
 $ cat regenie_step1_pred.list
-Y1    /abs/path/to/regenie_step1_1.loco
-Y2    /abs/path/to/regenie_step1_2.loco
+Y1	/abs/path/to/regenie_step1_1.loco
+Y2	/abs/path/to/regenie_step1_2.loco
 ```
 
 GRAB auto-detects the format from the file header and can distinguish whether the LOCO PGS files are produced by LDAK-KVIK or REGENIE.
@@ -184,33 +184,33 @@ The flags split into a small set you almost always set, plus a wider set you rea
 
 | Flag | What it does |
 | --- | --- |
-| `--method SPAsqr` | Selects the SPA<sub>SQR</sub> method (this is also what triggers all of the `--spasqr-*` options below). |
-| `--bfile geno` | PLINK 1 genotype fileset (`geno.{bed,bim,fam}`). PLINK 2 (`--pfile PREFIX`), VCF (`--vcf FILE`), and BGEN (`--bgen FILE`) are also accepted — exactly one of the four is required. |
-| `--pheno pheno_int.txt` | Phenotype file. Starts with `FID` and `IID`. |
-| `--covar covar.txt` | Covariate file. Starts with `FID` and `IID`. GRAB adds an intercept automatically — do not include one in the file. |
-| `--out spasqr_results` | Output prefix. GRAB appends `.<phenoname>.SPAsqr` so each trait gets its own tab-delimited result file. |
+| `--method` | Selects the GRAB method to run; use `SPAsqr` to trigger SPA<sub>SQR</sub> and all of the `--spasqr-*` options below. |
+| `--bfile` | PLINK 1 genotype fileset prefix (e.g. `geno` for `geno.{bed,bim,fam}`). PLINK 2 (`--pfile`), VCF (`--vcf`), and BGEN (`--bgen`) are also accepted — exactly one of the four is required. |
+| `--pheno` | Phenotype file (e.g. `pheno_int.txt`). Starts with `FID` and `IID`. |
+| `--covar` | Covariate file (e.g. `covar.txt`). Starts with `FID` and `IID`. GRAB adds an intercept automatically — do not include one in the file. |
+| `--out` | Output prefix (e.g. `spasqr_results`). GRAB appends `.<phenoname>.SPAsqr` so each trait gets its own tab-delimited result file. |
 
 **Optional:**
 
 | Flag | Default | What it does |
 | --- | --- | --- |
-| `--pred-list ldak_pred_list.txt` | — | Prediction list for LDAK-KVIK (or REGENIE's `regenie_step1_pred.list`). Omit to run with no LOCO offset — valid but much less powerful. |
-| `--pheno-transform int` | `int` | `int` / `standardize`. **Must match the transform used during PGS construction.** With `pheno_int.txt` and the INT workflow, leave it at the default. With raw `pheno.txt` fed to LDAK-KVIK or REGENIE, set this to `standardize`. |
-| `--pheno-name Y1,Y2` | all Y columns | Comma-separated list of trait columns to test. Omit to test every `Y` column found in `--pheno`. |
-| `--covar-name covar1,covar2` | all covar columns | Comma-separated list of covariate columns to use. |
-| `--spasqr-taus 0.1,0.3,0.5,0.7,0.9` | `0.1,0.3,0.5,0.7,0.9` | Quantile levels at which to test (max 20 levels). |
-| `--spasqr-h-scale 3` | `3` (score mode) | Bandwidth divisor: $h = \mathrm{IQR}(\tilde Y - \hat Y_{-c}) / \text{scale}$. Larger $k$ → less smoothing. |
+| `--pred-list` | — | Prediction list (e.g. `ldak_pred_list.txt` for LDAK-KVIK or `regenie_step1_pred.list` for REGENIE). Omit to run with no LOCO offset — valid but much less powerful. |
+| `--pheno-transform` | `int` | One of `int` / `standardize`. **Must match the transform used during PGS construction.** With `pheno_int.txt` and the INT workflow, leave it at the default. With raw `pheno.txt` fed to LDAK-KVIK or REGENIE, set this to `standardize`. |
+| `--pheno-name` | all Y columns | Comma-separated list of trait columns to test (e.g. `Y1,Y2`). Omit to test every `Y` column found in `--pheno`. |
+| `--covar-name` | all covar columns | Comma-separated list of covariate columns to use (e.g. `covar1,covar2`). |
+| `--spasqr-taus` | `0.1,0.3,0.5,0.7,0.9` | Quantile levels at which to test, comma-separated (max 20 levels). |
+| `--spasqr-h-scale` | `3` (score mode) | Bandwidth divisor: $h = \mathrm{IQR}(\tilde Y - \hat Y_{-c}) / \text{scale}$. Larger value → less smoothing. |
+| `--threads` | `1` | Number of threads used for parallel computing (e.g. `8`). |
 
-**SNP filters and runtime:**
+**SNP filters:**
 
 | Flag | Default | What it does |
 | --- | --- | --- |
-| `--maf 1e-5` | `1e-5` | Minimum minor allele frequency. |
-| `--mac 10` | `10` | Minimum minor allele count. |
-| `--geno 0.1` | `0.1` | Maximum per-variant missingness fraction. |
-| `--extract snps.txt` | — | Restrict testing to the variant IDs listed in `snps.txt` (one per line). |
-| `--chr 1,2,5` | all autosomes | Comma-separated chromosomes to test. |
-| `--threads 8` | `1` | Number of threads used for parallel computing. |
+| `--maf` | `1e-5` | Minimum minor allele frequency (e.g. `0.01`). |
+| `--mac` | `10` | Minimum minor allele count. |
+| `--geno` | `0.1` | Maximum per-variant missingness fraction. |
+| `--extract` | — | Restrict testing to the variant IDs listed in a file, one ID per line (e.g. `--extract snps.txt`). |
+| `--chr` | all autosomes | Comma-separated chromosomes to test (e.g. `1,2,5`). |
 
 Variants that fail the above QC constraints are omitted from GWAS results with $p$-values and $Z$-scores filled by NA.
 
@@ -285,7 +285,7 @@ With REGENIE (no separate `--make-ldak-predlist` step — REGENIE emits its own 
 
 ## Skipping the INT pre-transform
 
-You may also skip the INT pre-transform and feed the raw `pheno.txt` directly to LDAK-KVIK or REGENIE. Before fitting the LOCO PGS, both backends internally regress the covariates out of the trait and then standardize the residuals to mean zero and unit variance, so the LOCO PGS still lives on a **standardized scale**, not on the scale of the raw `Y` column. In this case, pass `--pheno-transform standardize` to GRAB at association testing so that the trait GRAB constructs internally and the LOCO PGS it subtracts are on the same scale.
+You may also skip the INT pre-transform and feed the raw `pheno.txt` directly to LDAK-KVIK or REGENIE. Before fitting the LOCO PGS, both LDAK-KVIK and REGENIE internally regress the covariates out of the trait and then standardize the residuals to mean zero and unit variance, so the LOCO PGS still live on a **standardized scale**, not on the scale of the raw `Y` column. In this case, pass `--pheno-transform standardize` to GRAB at association testing so that the trait and the LOCO PGS live on the same scale.
 
 The complete LDAK-KVIK + SPA<sub>SQR</sub> workflow without INT:
 
