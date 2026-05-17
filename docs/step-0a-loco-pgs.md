@@ -8,7 +8,7 @@ has_children: false
 
 # **Step 0a — LOCO polygenic scores**
 
-SPA<sub>SQR</sub> uses **leave-one-chromosome-out (LOCO) polygenic scores (PGS)** as an offset before fitting the null smoothed quantile regression model on each chromosome. This helps us better control for relatedness and also substantially improves the statistical power of our score tests. Although SPA<sub>SQR</sub> is a quantile GWAS method, LOCO PGS computed using linear GWAS software such as [**LDAK-KVIK**](https://dougspeed.com/ldak-kvik/) and [**REGENIE**](https://rgcgithub.github.io/regenie/) work very well for our purpose. Thus, SPA<sub>SQR</sub> outsources the complex task of PGS construction to existing software.
+A **leave-one-chromosome-out (LOCO) polygenic score (PGS)** is a per-subject prediction of the trait built from variants on every chromosome *except* the one currently being tested. SPA<sub>SQR</sub> uses LOCO PGS as an offset before fitting the null smoothed quantile regression model on each chromosome. This helps us better control for relatedness and also substantially improves the statistical power of our score tests. Although SPA<sub>SQR</sub> is a quantile GWAS method, LOCO PGS computed using linear GWAS software such as [**LDAK-KVIK**](https://dougspeed.com/ldak-kvik/) and [**REGENIE**](https://rgcgithub.github.io/regenie/) work very well for our purpose. Thus, SPA<sub>SQR</sub> outsources the complex task of PGS construction to existing software.
 
 On this page we give a detailed tutorial on how to compute LOCO PGS using either LDAK-KVIK or REGENIE.
 
@@ -46,7 +46,7 @@ fam3   sample4   -1.12     0.45
 
 The FID and IID columns of `pheno.txt` and `covar.txt` should match those in `geno.fam`. These simulated data are available in our Github Repository so users can try to replicate this tutorial. Note that GRAB automatically adds an intercept to the covariates, so there is no need to include an intercept column in `covar.txt`.
 
-By the end of Step 0a we will have one LOCO PGS file per trait plus a small text file pairing each trait name with its corresponding LOCO PGS file (`ldak_pred_list.txt` if we used LDAK-KVIK, or REGENIE's native `regenie_step1_pred.list` if we used REGENIE). This pred-list file is what we pass to GRAB via the `--pred-list` argument for it to utilize the constructed LOCO PGS.
+By the end of Step 0a we will have one LOCO PGS file per trait plus a small text file called a **pred-list** — a two-column table pairing each phenotype name (column 1) with the absolute path to its LOCO PGS file (column 2). The pred-list is what GRAB reads (via the `--pred-list` argument) to know which PGS to subtract from which trait. This two-column format is a REGENIE convention; GRAB adopts the same convention so that REGENIE's native output (`regenie_step1_pred.list`) can be passed in unchanged, while on the LDAK-KVIK side we build the same file ourselves and conventionally call it `ldak_pred_list.txt`.
 
 ## INT pre-transformation
 
@@ -108,7 +108,7 @@ EOF
 
 `$(pwd)` expands to the current working directory so each entry ends up as an absolute path, which is what GRAB requires.
 
-GRAB also offers a utility that synthesizes `ldak_pred_list.txt` by scanning the current working directory for files ending in `.loco.prs` and matching them positionally to the columns of `pheno_int.txt`:
+As a shortcut for the manual snippet above, GRAB also offers a utility that synthesizes `ldak_pred_list.txt` by scanning the current working directory for files ending in `.loco.prs` and matching them positionally to the columns of `pheno_int.txt`:
 
 ```bash
 grab --make-ldak-predlist --pheno pheno_int.txt --out ldak_pred_list
@@ -154,6 +154,8 @@ FID_IID       fam1_sample1   fam1_sample2   fam2_sample3   ...
 1             0.0497         -0.0624         -0.0156
 2             0.0502         -0.0558         -0.0152
 ```
+
+This layout difference is transparent to the user: GRAB auto-detects the format from the file header and parses both LDAK-KVIK and REGENIE outputs uniformly.
 
 Unlike with LDAK-KVIK, the `regenie_step1_pred.list` REGENIE produces can be passed directly to GRAB's `--pred-list` option — one row per phenotype, with the phenotype name in column 1 and the absolute path to the corresponding `.loco` file in column 2:
 
