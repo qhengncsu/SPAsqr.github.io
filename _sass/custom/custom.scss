@@ -2,3 +2,44 @@
 .main-content p {
   text-align: justify;
 }
+
+// GitHub-style code blocks: flat light-gray background, thin border,
+// rounded corners. just-the-docs's default is a touch boxier and
+// brighter; this brings it in line with what people see in READMEs.
+.main-content {
+  // Fenced code blocks — both ```bash (syntax-highlighted) and ``` (plain).
+  div.highlighter-rouge,
+  figure.highlight,
+  .highlight {
+    background-color: #f6f8fa;
+    border: 1px solid #d8dee4;
+    border-radius: 6px;
+  }
+
+  div.highlighter-rouge pre.highlight,
+  figure.highlight pre,
+  .highlight pre {
+    background-color: transparent;
+    border: none;
+    padding: 12px 16px;
+    margin: 0;
+    line-height: 1.45;
+  }
+
+  // Inline code (e.g. `--pred-list` inside a sentence).
+  code {
+    background-color: #f6f8fa;
+    border-radius: 3px;
+    padding: 0.15em 0.35em;
+    font-size: 0.9em;
+  }
+
+  // Cancel the inline-code styling when code sits inside a fenced block.
+  pre code,
+  .highlight code {
+    background-color: transparent;
+    padding: 0;
+    font-size: inherit;
+    border-radius: 0;
+  }
+}
