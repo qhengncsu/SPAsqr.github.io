@@ -8,9 +8,10 @@ has_children: false
 
 # **Workflow 1: LOCO PGS + SPA<sub>SQR</sub>**
 
-A **leave-one-chromosome-out (LOCO) polygenic score (PGS)** is a per-subject prediction of the trait built from variants on every chromosome *except* the one currently being tested. SPA<sub>SQR</sub> uses LOCO PGS as an offset before fitting the null smoothed quantile regression model on each chromosome. This helps us better control for relatedness and also substantially improves the statistical power of our score tests. Although SPA<sub>SQR</sub> is a quantile GWAS method, LOCO PGS computed using linear GWAS software such as [**LDAK-KVIK**](https://dougspeed.com/ldak-kvik/) and [**REGENIE**](https://rgcgithub.github.io/regenie/) work very well for our purpose. Thus, SPA<sub>SQR</sub> outsources the complex task of PGS construction to existing software.
+In this section we give a detailed tutorial on how to run SPA<sub>SQR</sub> association testing using a **leave-one-chromosome-out (LOCO) polygenic score (PGS)** as an offset. A LOCO PGS is a per-subject prediction of the trait built from variants on every chromosome *except* the one currently being tested. SPA<sub>SQR</sub> subtracts the chromosome-specific LOCO PGS from the trait before fitting the null smoothed quantile regression model on each chromosome, which helps control for relatedness and substantially improves the statistical power of our score tests.
 
-On this page we give a detailed tutorial on how to compute LOCO PGS using either LDAK-KVIK or REGENIE.
+Although SPA<sub>SQR</sub> is a quantile GWAS method, LOCO PGS computed using *linear* GWAS software works very well for our purpose. We therefore outsource PGS construction to either [**LDAK-KVIK**](https://dougspeed.com/ldak-kvik/) or [**REGENIE**](https://rgcgithub.github.io/regenie/), then pass the resulting PGS to GRAB for per-variant association testing.
+
 
 ## Data that you will need
 
@@ -124,32 +125,6 @@ Y2    /abs/path/to/ldak_step1.step1.pheno2.loco.prs
 
 **But `./grab --make-ldak-predlist` may fail** — for example, when multiple LDAK runs share the same working directory and the match is ambiguous, the utility hard-errors with an explicit message, and it is recommended to fall back to the manual approach.
 
-Putting it all together, the complete LDAK-KVIK + SPA<sub>SQR</sub> workflow with INT looks like:
-
-```bash
-# 1. INT-transform the phenotype
-./grab --int-pheno --pheno pheno.txt --out pheno_int
-
-# 2. Train the LOCO PGS on the INT-transformed Y
-./ldak6.2.linux \
-    --kvik-step1 ldak_step1 \
-    --bfile geno \
-    --pheno pheno_int.txt --mpheno ALL \
-    --covar covar.txt \
-    --max-threads 8
-
-# 3. Build the pred-list (or write ldak_pred_list.txt by hand)
-./grab --make-ldak-predlist --pheno pheno_int.txt --out ldak_pred_list
-
-# 4. Run SPAsqr; --pheno-transform int is the default and matches the INT-trained PGS
-./grab --method SPAsqr \
-    --bfile geno \
-    --pheno pheno_int.txt \
-    --covar covar.txt \
-    --pred-list ldak_pred_list.txt \
-    --out spasqr_results
-```
-
 ## Computing the LOCO PGS with REGENIE
 
 We may also compute LOCO PGS via REGENIE Step 1:
@@ -191,7 +166,68 @@ Y1    /abs/path/to/regenie_step1_1.loco
 Y2    /abs/path/to/regenie_step1_2.loco
 ```
 
-Putting it all together, the complete REGENIE + SPA<sub>SQR</sub> workflow with INT looks like:
+## Running association testing with GRAB
+
+Once the pred-list is ready, association testing is a single `grab` call:
+
+```bash
+./grab --method SPAsqr \
+    --bfile geno \
+    --pheno pheno_int.txt \
+    --covar covar.txt \
+    --pred-list ldak_pred_list.txt \
+    --out spasqr_results
+```
+
+The key flags are:
+
+| Flag | What it does |
+| --- | --- |
+| `--bfile geno` | PLINK genotype fileset for the variants to test. PLINK 2 (`--pfile`), VCF (`--vcf`), and BGEN (`--bgen`) inputs are also supported. |
+| `--pheno pheno_int.txt` | Phenotype file — the same one fed to LDAK-KVIK / REGENIE, or its raw / INT'd counterpart used consistently. |
+| `--covar covar.txt` | Covariate file. GRAB adds an intercept automatically. |
+| `--pred-list ldak_pred_list.txt` | The pred-list we just built (or REGENIE's `regenie_step1_pred.list`). |
+| `--pheno-transform` | Defaults to `int`. Must match the transform used during PGS construction. |
+| `--out spasqr_results` | Output prefix. GRAB writes one tab-delimited file per phenotype. |
+
+GRAB writes one output file per phenotype:
+
+```
+spasqr_results.Y1.SPAsqr
+spasqr_results.Y2.SPAsqr
+```
+
+Each file lists per-variant statistics including per-quantile $p$-values, the Cauchy-combined $P_\mathrm{CCT}$, and per-$\tau$ $Z$-scores. See [Running SPA<sub>SQR</sub>]({{ site.baseurl }}/docs/running-spasqr.html) for the full flag reference and output schema.
+
+### End-to-end recipes (with INT)
+
+With LDAK-KVIK:
+
+```bash
+# 1. INT-transform the phenotype
+./grab --int-pheno --pheno pheno.txt --out pheno_int
+
+# 2. Train the LOCO PGS on the INT-transformed Y
+./ldak6.2.linux \
+    --kvik-step1 ldak_step1 \
+    --bfile geno \
+    --pheno pheno_int.txt --mpheno ALL \
+    --covar covar.txt \
+    --max-threads 8
+
+# 3. Build the pred-list (or write ldak_pred_list.txt by hand)
+./grab --make-ldak-predlist --pheno pheno_int.txt --out ldak_pred_list
+
+# 4. Run SPAsqr; --pheno-transform int is the default and matches the INT-trained PGS
+./grab --method SPAsqr \
+    --bfile geno \
+    --pheno pheno_int.txt \
+    --covar covar.txt \
+    --pred-list ldak_pred_list.txt \
+    --out spasqr_results
+```
+
+With REGENIE (no separate `--make-ldak-predlist` step — REGENIE emits its own pred-list):
 
 ```bash
 # 1. INT-transform the phenotype
@@ -214,7 +250,6 @@ Putting it all together, the complete REGENIE + SPA<sub>SQR</sub> workflow with 
     --pred-list regenie_step1_pred.list \
     --out spasqr_results
 ```
-
 
 ## Skipping the INT pre-transform
 
