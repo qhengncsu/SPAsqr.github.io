@@ -1,0 +1,12 @@
+{%- comment -%}
+Override just-the-docs's default title include so the sidebar can
+render the SQR subscript with actual <sub> markup, instead of either a
+literal underscore or a plain "SPAsqr". `site.title` is still set to
+the plain-text "SPAsqr" for places that don't render HTML (RSS feed,
+social previews, <title> tag).
+{%- endcomment -%}
+{%- if site.logo -%}
+  <img class="site-logo" src="{{ site.logo | absolute_url }}" alt="{{ site.title }}" />
+{%- else -%}
+  SPA<sub>SQR</sub>
+{%- endif -%}

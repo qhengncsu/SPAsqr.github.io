@@ -219,3 +219,49 @@ Putting it all together, the complete REGENIE + SPA<sub>SQR</sub> workflow with 
 ## Skipping the INT pre-transform
 
 You may also skip the INT pre-transform and feed the raw `pheno.txt` directly to LDAK-KVIK or REGENIE. Before fitting the LOCO PGS, both backends internally regress the covariates out of the trait and then standardize the residuals to mean zero and unit variance, so the LOCO PGS still lives on a **standardized scale**, not on the scale of the raw `Y` column. In this case, pass `--pheno-transform standardize` to GRAB at association testing so that the trait GRAB constructs internally and the LOCO PGS it subtracts are on the same scale.
+
+The complete LDAK-KVIK + SPA<sub>SQR</sub> workflow without INT:
+
+```bash
+# 1. Train the LOCO PGS on raw Y
+./ldak6.2.linux \
+    --kvik-step1 ldak_step1 \
+    --bfile geno \
+    --pheno pheno.txt --mpheno ALL \
+    --covar covar.txt \
+    --max-threads 8
+
+# 2. Build the pred-list (or write ldak_pred_list.txt by hand)
+./grab --make-ldak-predlist --pheno pheno.txt --out ldak_pred_list
+
+# 3. Run SPAsqr with --pheno-transform standardize
+./grab --method SPAsqr \
+    --bfile geno \
+    --pheno pheno.txt \
+    --covar covar.txt \
+    --pred-list ldak_pred_list.txt \
+    --pheno-transform standardize \
+    --out spasqr_results
+```
+
+And the complete REGENIE + SPA<sub>SQR</sub> workflow without INT:
+
+```bash
+# 1. Train the LOCO PGS on raw Y
+./regenie \
+    --step 1 \
+    --bed geno \
+    --phenoFile pheno.txt \
+    --covarFile covar.txt \
+    --bsize 1000 \
+    --out regenie_step1
+
+# 2. Run SPAsqr with REGENIE's native pred-list and --pheno-transform standardize
+./grab --method SPAsqr \
+    --bfile geno \
+    --pheno pheno.txt \
+    --covar covar.txt \
+    --pred-list regenie_step1_pred.list \
+    --pheno-transform standardize \
+    --out spasqr_results
+```
