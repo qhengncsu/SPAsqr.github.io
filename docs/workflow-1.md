@@ -102,12 +102,12 @@ Unlike REGENIE, LDAK-KVIK does not emit a prediction list pairing each phenotype
 
 ```bash
 cat > ldak_pred_list.txt <<EOF
-Y1    $(pwd)/ldak_step1.step1.pheno1.loco.prs
-Y2    $(pwd)/ldak_step1.step1.pheno2.loco.prs
+Y1	$(pwd)/ldak_step1.step1.pheno1.loco.prs
+Y2	$(pwd)/ldak_step1.step1.pheno2.loco.prs
 EOF
 ```
 
-`$(pwd)` expands to the current working directory so each entry ends up as an absolute path, which is what GRAB requires.
+`$(pwd)` expands to the current working directory so each entry ends up as an absolute path.
 
 GRAB also offers a utility that synthesizes `ldak_pred_list.txt` by scanning the current working directory for files ending in `.loco.prs` and starting with `ldak_step1` and matching them positionally to the columns of `pheno_int.txt`:
 
@@ -115,12 +115,12 @@ GRAB also offers a utility that synthesizes `ldak_pred_list.txt` by scanning the
 ./grab --make-ldak-predlist --prefix ldak_step1 --pheno pheno_int.txt --out ldak_pred_list
 ```
 
-The `--prefix ldak_step1` argument restricts the scan to files whose name starts with `ldak_step1`, so any unrelated LDAK runs sitting in the same directory are ignored. The command writes `ldak_pred_list.txt` with the following content:
+Provided there are no irrelevant files that also start with `ldak_step1` and end with `.loco.prs`,  the above command writes `ldak_pred_list.txt` with the following content:
 
 ```
 $ cat ldak_pred_list.txt
-Y1    /abs/path/to/ldak_step1.step1.pheno1.loco.prs
-Y2    /abs/path/to/ldak_step1.step1.pheno2.loco.prs
+Y1	/abs/path/to/ldak_step1.step1.pheno1.loco.prs
+Y2	/abs/path/to/ldak_step1.step1.pheno2.loco.prs
 ```
 
 
@@ -138,7 +138,7 @@ We may also compute LOCO PGS via REGENIE Step 1:
     --out regenie_step1
 ```
 
-This produces one LOCO PGS file per trait plus REGENIE's own pairing list:
+This produces one LOCO PGS file per trait plus REGENIE's own prediction list:
 
 ```
 regenie_step1_1.loco          (LOCO PGS for Y1)
@@ -154,9 +154,6 @@ FID_IID       fam1_sample1   fam1_sample2   fam2_sample3   ...
 1             0.0497         -0.0624         -0.0156
 2             0.0502         -0.0558         -0.0152
 ```
-
-GRAB auto-detects the format from the file header and decides whether the LOCO PGS files are produced by LDAK-KVIK or REGENIE.
-
 Unlike with LDAK-KVIK, REGENIE produces `regenie_step1_pred.list` which can be passed directly to GRAB's `--pred-list` option:
 
 ```
@@ -165,9 +162,12 @@ Y1    /abs/path/to/regenie_step1_1.loco
 Y2    /abs/path/to/regenie_step1_2.loco
 ```
 
+GRAB auto-detects the format from the file header and can distinguish whether the LOCO PGS files are produced by LDAK-KVIK or REGENIE.
+
+
 ## Running association testing with GRAB
 
-Once the prediction list is ready, association testing is a single `grab` call:
+Once the prediction list is ready, null model fitting and association testing is performed via a single `grab` call:
 
 ```bash
 ./grab --method SPAsqr \
@@ -186,26 +186,33 @@ The flags split into a small set you almost always set, plus a wider set you rea
 | --- | --- |
 | `--method SPAsqr` | Selects the SPA<sub>SQR</sub> method (this is also what triggers all of the `--spasqr-*` options below). |
 | `--bfile geno` | PLINK 1 genotype fileset (`geno.{bed,bim,fam}`). PLINK 2 (`--pfile PREFIX`), VCF (`--vcf FILE`), and BGEN (`--bgen FILE`) are also accepted — exactly one of the four is required. |
-| `--pheno pheno_int.txt` | Phenotype file. Use the same scale you fed to the PGS backend; in this workflow that is the INT-transformed `pheno_int.txt`. |
+| `--pheno pheno_int.txt` | Phenotype file. Starts with `FID` and `IID`. |
+| `--covar covar.txt` | Covariate file. Starts with `FID` and `IID`. GRAB adds an intercept automatically — do not include one in the file. |
 | `--out spasqr_results` | Output prefix. GRAB appends `.<phenoname>.SPAsqr` so each trait gets its own tab-delimited result file. |
 
-**Frequently used optional:**
+**Optional:**
 
 | Flag | Default | What it does |
 | --- | --- | --- |
-| `--pred-list ldak_pred_list.txt` | — | Prediction list (the one we just built, or REGENIE's `regenie_step1_pred.list`). Omit to run with no LOCO offset — valid but forfeits the polygenic power gain. |
-| `--pheno-transform int` | `int` | One of `raw` / `int` / `standardize`. **Must match the transform used during PGS construction.** With `pheno_int.txt` and the INT workflow, leave it at the default. With raw `pheno.txt` fed to the backend, set this to `standardize`. |
+| `--pred-list ldak_pred_list.txt` | — | Prediction list for LDAK-KVIK (or REGENIE's `regenie_step1_pred.list`). Omit to run with no LOCO offset — valid but much less powerful. |
+| `--pheno-transform int` | `int` | `int` / `standardize`. **Must match the transform used during PGS construction.** With `pheno_int.txt` and the INT workflow, leave it at the default. With raw `pheno.txt` fed to LDAK-KVIK or REGENIE, set this to `standardize`. |
 | `--pheno-name Y1,Y2` | all Y columns | Comma-separated list of trait columns to test. Omit to test every `Y` column found in `--pheno`. |
-| `--covar covar.txt` | — | Covariate file. GRAB adds an intercept automatically — do not include one in the file. |
 | `--covar-name covar1,covar2` | all covar columns | Comma-separated list of covariate columns to use. |
-| `--spasqr-taus 0.1,0.3,0.5,0.7,0.9` | `0.1,0.3,0.5,0.7,0.9` | Quantile levels at which to test. More $\tau$ buys power against heteroskedastic / quantile-dependent effects at the cost of more compute (max 20 levels). |
-| `--spasqr-h-scale 3` | `3` (score mode) | Bandwidth divisor: $h = \mathrm{IQR}(\tilde Y - \hat Y_{-c}) / \text{scale}$. Larger scale → narrower kernel and more "spiky" rank scores. |
+| `--spasqr-taus 0.1,0.3,0.5,0.7,0.9` | `0.1,0.3,0.5,0.7,0.9` | Quantile levels at which to test (max 20 levels). |
+| `--spasqr-h-scale 3` | `3` (score mode) | Bandwidth divisor: $h = \mathrm{IQR}(\tilde Y - \hat Y_{-c}) / \text{scale}$. Larger $k$ → less smoothing. |
+
+**SNP filters and runtime:**
+
+| Flag | Default | What it does |
+| --- | --- | --- |
 | `--maf 1e-5` | `1e-5` | Minimum minor allele frequency. |
 | `--mac 10` | `10` | Minimum minor allele count. |
 | `--geno 0.1` | `0.1` | Maximum per-variant missingness fraction. |
-| `--threads 8` | `1` | Worker threads for the per-chromosome chunk loop. Scale roughly with physical cores. |
-| `--extract snps.txt` | — | Restrict testing to the variant IDs listed in `snps.txt` (one per line). Useful for targeted re-runs. |
+| `--extract snps.txt` | — | Restrict testing to the variant IDs listed in `snps.txt` (one per line). |
 | `--chr 1,2,5` | all autosomes | Comma-separated chromosomes to test. |
+| `--threads 8` | `1` | Number of threads used for parallel computing. |
+
+Variants that fail the above QC constraints are omitted from GWAS results with $p$-values and $Z$-scores filled by NA.
 
 GRAB writes one output file per phenotype:
 
@@ -214,8 +221,16 @@ spasqr_results.Y1.SPAsqr
 spasqr_results.Y2.SPAsqr
 ```
 
-Each file lists per-variant statistics including per-quantile $p$-values, the Cauchy-combined $P_\mathrm{CCT}$, and per-$\tau$ $Z$-scores. See [Running SPA<sub>SQR</sub>]({{ site.baseurl }}/docs/running-spasqr.html) for the full flag reference and output schema.
+Each file lists per-variant statistics including per-quantile $p$-values, the Cauchy-combined $P_\mathrm{CCT}$, and per-$\tau$ $Z$-scores:
 
+```
+$ head -3 spasqr_results.Y1.SPAsqr
+CHROM  POS      ID          REF  ALT  MISS_RATE   ALT_FREQ  MAC    HWE_P     P_CCT      P_tau0.1  P_tau0.3   P_tau0.5   P_tau0.7    P_tau0.9    Z_tau0.1    Z_tau0.3   Z_tau0.5  Z_tau0.7  Z_tau0.9
+1      1171417  rs6603782   C    T    0.0137558   0.326478  25748  0.536365  0.0071169  0.923124  0.397414   0.0379922  0.00415006  0.00223711  -0.0964998  -0.846248  -2.07494  -2.86651  -3.0567
+1      2236359  rs60363208  G    A    0.00435185  0.173843  13841  0.412157  0.227344   0.273908  0.0829882  0.152614   0.509465    0.70161     1.09411     1.73361    1.43036   0.65967   -0.383148
+```
+
+The first nine columns are the variant identifier and standard variant-level QC fields. `P_CCT` is the Cauchy-combined $p$-value across all $\tau$ levels and is the main genome-wide significance number to take to a Manhattan plot. The `P_tauX` and `Z_tauX` columns give the per-quantile $p$-values and $Z$-scores; comparing them across $\tau$ reveals whether a hit is driven by a mean shift (uniform signal across $\tau$), a tail effect (concentrated at extreme $\tau$), or a heteroskedastic / dispersion effect (sign change between low and high $\tau$).
 ### End-to-end recipes (with INT)
 
 With LDAK-KVIK:
