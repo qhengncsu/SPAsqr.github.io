@@ -1,6 +1,6 @@
 ---
 layout: default
-title: "Workflow 1: LOCO PGS + SPAsqr"
+title: "Workflow 1: LOCO PGS + SPA<sub>SQR</sub>"
 nav_order: 3
 description: "End-to-end recipe for running SPAsqr with a LOCO polygenic score (without a sparse GRM)."
 has_children: false
