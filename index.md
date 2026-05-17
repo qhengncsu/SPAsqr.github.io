@@ -19,7 +19,7 @@ tails so that rare variants are well-calibrated even under heavy-tailed
 or skewed phenotypes.
 
 SPA<sub>SQR</sub> is implemented as the `SPAsqr` method of the
-[**GRAB**](https://github.com/qiang-heng/GRAB-feat-cpp) command-line
+[**GRAB**](https://github.com/qhengncsu/GRAB-feat-cpp) command-line
 binary — a single statically linked C++17 executable that runs
 unmodified on Linux, macOS, and Windows.
 

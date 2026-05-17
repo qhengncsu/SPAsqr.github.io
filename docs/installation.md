@@ -9,7 +9,7 @@ has_children: false
 # **Installation**
 
 SPA<sub>SQR</sub> ships as the `SPAsqr` method of the
-[**GRAB**](https://github.com/qiang-heng/GRAB-feat-cpp) command-line
+[**GRAB**](https://github.com/qhengncsu/GRAB-feat-cpp) command-line
 binary. GRAB is a pure C++17 application; **all third-party
 dependencies are vendored** in `third_party/` (Eigen, Boost
 headers-only subset, zlib, zstd, libdeflate, plink2/pgenlib, bgen,
@@ -22,7 +22,7 @@ macOS, and Windows** (MSYS2 / MinGW).
 ## Quick install
 
 ```bash
-git clone https://github.com/qiang-heng/GRAB-feat-cpp.git
+git clone https://github.com/qhengncsu/GRAB-feat-cpp.git
 cd GRAB-feat-cpp
 make -j$(nproc)             # or sysctl -n hw.ncpu on macOS
 ./build/grab --help SPAsqr  # smoke-test

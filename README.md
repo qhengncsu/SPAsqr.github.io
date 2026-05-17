@@ -1,8 +1,8 @@
 # Documentation for SPA<sub>SQR</sub>
 
-**SPA<sub>SQR</sub> is implemented in the [GRAB](https://github.com/qiang-heng/GRAB-feat-cpp) command-line binary.**
+**SPA<sub>SQR</sub> is implemented in the [GRAB](https://github.com/qhengncsu/GRAB-feat-cpp) command-line binary.**
 
-**The full documentation is available at [SPA<sub>SQR</sub> documentation](https://qiang-heng.github.io/SPAsqr.github.io/).**
+**The full documentation is available at [SPA<sub>SQR</sub> documentation](https://qhengncsu.github.io/SPAsqr.github.io/).**
 
 SPA<sub>SQR</sub> is a saddlepoint-approximated, smoothed quantile
 regression (SQR) framework for genome-wide association studies on
