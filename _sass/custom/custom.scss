@@ -2,3 +2,17 @@
 .main-content p {
   text-align: justify;
 }
+
+// Visually distinguish shell-command blocks (```bash) from file-content
+// or program-output blocks (plain ```). Just-the-docs wraps fenced blocks
+// in a <div class="language-XXX highlighter-rouge"> container, which we
+// target here with a coloured left border and a subtle background tint.
+.main-content .language-bash.highlighter-rouge {
+  border-left: 4px solid #2e74b5; // blue band — "shell command"
+  background-color: #f3f7fb;
+}
+
+.main-content .language-plaintext.highlighter-rouge {
+  border-left: 4px solid #d4a017; // amber band — "file content / output"
+  background-color: #fdf8ec;
+}

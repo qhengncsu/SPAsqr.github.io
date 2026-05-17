@@ -46,7 +46,7 @@ fam3   sample4   -1.12     0.45
 
 The FID and IID columns of `pheno.txt` and `covar.txt` should match those in `geno.fam`. These simulated data are available in our Github Repository so users can try to replicate this tutorial. Note that GRAB automatically adds an intercept to the covariates, so there is no need to include an intercept column in `covar.txt`.
 
-By the end of Step 0a we will have one LOCO PGS file per trait plus a small text file called a **pred-list** — a two-column table pairing each phenotype name (column 1) with the absolute path to its LOCO PGS file (column 2). The pred-list is what GRAB reads (via the `--pred-list` argument) to know which PGS to subtract from which trait. This two-column format is a REGENIE convention; GRAB adopts the same convention so that REGENIE's native output (`regenie_step1_pred.list`) can be passed in unchanged, while on the LDAK-KVIK side we build the same file ourselves and conventionally call it `ldak_pred_list.txt`.
+By the end of Step 0a we will have one LOCO PGS file per trait plus a small text file called a **prediction list** — a two-column table pairing each phenotype name (column 1) with the absolute path to its LOCO PGS file (column 2). The prediction list is what GRAB reads (via the `--pred-list` argument) to know which PGS to subtract from which trait. This file format is a REGENIE convention that we follow here.
 
 ## INT pre-transformation
 
@@ -97,7 +97,7 @@ fam1   sample1     0.124   -0.083    0.211         0.196
 fam1   sample2    -0.241    0.018   -0.135        -0.057
 ```
 
-Unlike REGENIE, LDAK-KVIK does not emit a pred-list pairing each phenotype with its LOCO PGS file. One can create `ldak_pred_list.txt` manually with a short shell snippet:
+Unlike REGENIE, LDAK-KVIK does not emit a prediction list pairing each phenotype with its LOCO PGS file. One can create `ldak_pred_list.txt` manually with a short shell snippet:
 
 ```bash
 cat > ldak_pred_list.txt <<EOF
@@ -122,7 +122,7 @@ Y1    /abs/path/to/ldak_step1.step1.pheno1.loco.prs
 Y2    /abs/path/to/ldak_step1.step1.pheno2.loco.prs
 ```
 
-**But `grab --make-ldak-predlist` may fail** — for example, when multiple LDAK runs share the same working directory and the match is ambiguous, or when not all expected `phenoN` files are present — the utility hard-errors with an explicit message, and it is recommended to fall back to the manual approach.
+**But `grab --make-ldak-predlist` may fail** — for example, when multiple LDAK runs share the same working directory and the match is ambiguous, the utility hard-errors with an explicit message, and it is recommended to fall back to the manual approach.
 
 ## Computing the LOCO PGS with REGENIE
 
@@ -155,9 +155,9 @@ FID_IID       fam1_sample1   fam1_sample2   fam2_sample3   ...
 2             0.0502         -0.0558         -0.0152
 ```
 
-This layout difference is transparent to the user: GRAB auto-detects the format from the file header and parses both LDAK-KVIK and REGENIE outputs uniformly.
+GRAB auto-detects the format from the file header and decides whether the LOCO PGS files are produced by LDAK-KVIK or REGENIE.
 
-Unlike with LDAK-KVIK, the `regenie_step1_pred.list` REGENIE produces can be passed directly to GRAB's `--pred-list` option — one row per phenotype, with the phenotype name in column 1 and the absolute path to the corresponding `.loco` file in column 2:
+Unlike with LDAK-KVIK, REGENIE produces `regenie_step1_pred.list` which can be passed directly to GRAB's `--pred-list` option:
 
 ```
 $ cat regenie_step1_pred.list
@@ -165,11 +165,10 @@ Y1    /abs/path/to/regenie_step1_1.loco
 Y2    /abs/path/to/regenie_step1_2.loco
 ```
 
-This two-column "name + absolute path" pred-list format is a REGENIE convention. GRAB adopts the same convention so REGENIE Step 1 output can be piped straight in without rewriting, and `grab --make-ldak-predlist` produces a file in the same format on the LDAK-KVIK side.
 
 ## Skipping the INT pre-transform
 
-If you prefer to skip the INT transform, we can instead feed the raw `pheno.txt` directly to either backend. For example, for LDAK-KVIK, we now run
+If you prefer to skip the INT transform, we can instead feed the raw `pheno.txt` directly to either LDAK-KVIV or REGENIE. For example, for LDAK-KVIK, we now run
 
 ```bash
 ldak6.2.linux \
@@ -181,8 +180,30 @@ ldak6.2.linux \
 grab --make-ldak-predlist --pheno pheno.txt --out ldak_pred_list
 ```
 
-Before fitting the LOCO PGS, both LDAK-KVIK and REGENIE internally regress the covariates out of the trait and then standardize the residuals to mean zero and unit variance. The resulting LOCO PGS therefore lives on a **standardized scale**, not on the scale of the raw `Y` column.
+Before fitting the LOCO PGS, both LDAK-KVIK and REGENIE internally regress the covariates out of the trait and then standardize the residuals to mean zero and unit variance. The resulting LOCO PGS therefore lives on a **standardized scale**, not on the scale of the raw `Y` column. Thus, if we use `pheno_int.txt` in PGS construction, we should use `--pheno-transform int`; if we use `pheno.txt` in PGS construction, we should use `--pheno-transform standardize` in association testing.
 
-To keep the LOCO PGS offset on the same scale as the trait it is subtracted from, pass `--pheno-transform standardize` to GRAB in Step 1–2; GRAB then centres and unit-scales the values in `pheno.txt` internally before subtracting the LOCO PGS.
+Putting it all together, the complete LDAK-KVIK + SPA<sub>SQR</sub> workflow without INT looks like:
 
-> **Note on the `--pheno-transform` default.** The default value of `--pheno-transform` is `int`, matching the recommended INT workflow above. If you fed `pheno_int.txt` to LDAK-KVIK or REGENIE, you can omit `--pheno-transform` entirely when invoking GRAB. You only need to set `--pheno-transform standardize` (or `raw`) when you deliberately deviate from the default INT workflow.
+```bash
+# 1. Train the LOCO PGS on raw Y
+ldak6.2.linux \
+    --kvik-step1 ldak_step1 \
+    --bfile geno \
+    --pheno pheno.txt --mpheno ALL \
+    --covar covar.txt \
+    --max-threads 8
+
+# 2. Build the pred-list (or write ldak_pred_list.txt by hand)
+grab --make-ldak-predlist --pheno pheno.txt --out ldak_pred_list
+
+# 3. Run SPAsqr; --pheno-transform standardize keeps the trait and PGS on the same scale
+grab --method SPAsqr \
+    --bfile geno \
+    --pheno pheno.txt \
+    --covar covar.txt \
+    --pred-list ldak_pred_list.txt \
+    --pheno-transform standardize \
+    --out spasqr_results
+```
+
+See [Running SPA<sub>SQR</sub>]({{ site.baseurl }}/docs/running-spasqr.html) for the full set of options accepted by `grab --method SPAsqr`.
