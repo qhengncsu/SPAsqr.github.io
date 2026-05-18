@@ -116,21 +116,6 @@ EOF
 
 `$(pwd)` expands to the current working directory so each entry ends up as an absolute path.
 
-GRAB also offers a utility that synthesizes `ldak_pred_list.txt` by scanning the current working directory for files ending in `.loco.prs` and starting with `ldak_step1` and matching them positionally to the columns of `pheno_int.txt`:
-
-```bash
-./grab --make-ldak-predlist --prefix ldak_step1 --pheno pheno_int.txt --out ldak_pred_list
-```
-
-Provided there are no irrelevant files that also start with `ldak_step1` and end with `.loco.prs` in current working directory,  the above command writes `ldak_pred_list.txt` with the following content:
-
-```
-$ cat ldak_pred_list.txt
-bmi	/abs/path/to/ldak_step1.step1.pheno1.loco.prs
-ldl	/abs/path/to/ldak_step1.step1.pheno2.loco.prs
-```
-
-
 ## Computing the LOCO PGS with REGENIE
 
 We may also compute LOCO PGS via REGENIE Step 1:
@@ -254,8 +239,11 @@ LDAK-KVIK LOCO PGS with INT:
     --covar covar.txt \
     --max-threads 8
 
-# 3. Build the pred-list (or write ldak_pred_list.txt by hand)
-./grab --make-ldak-predlist --prefix ldak_step1 --pheno pheno_int.txt --out ldak_pred_list
+# 3. Build the pred-list
+cat > ldak_pred_list.txt <<EOF
+bmi	$(pwd)/ldak_step1.step1.pheno1.loco.prs
+ldl	$(pwd)/ldak_step1.step1.pheno2.loco.prs
+EOF
 
 # 4. Run SPAsqr; --pheno-transform int is the default and matches the INT-trained PGS
 ./grab --method SPAsqr \
@@ -305,8 +293,11 @@ LDAK-KVIK LOCO PGS without INT:
     --covar covar.txt \
     --max-threads 8
 
-# 2. Build the pred-list (or write ldak_pred_list.txt by hand)
-./grab --make-ldak-predlist --prefix ldak_step1 --pheno pheno.txt --out ldak_pred_list
+# 2. Build the pred-list
+cat > ldak_pred_list.txt <<EOF
+bmi	$(pwd)/ldak_step1.step1.pheno1.loco.prs
+ldl	$(pwd)/ldak_step1.step1.pheno2.loco.prs
+EOF
 
 # 3. Run SPAsqr with --pheno-transform standardize
 ./grab --method SPAsqr \

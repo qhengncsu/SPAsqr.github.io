@@ -95,7 +95,10 @@ LDAK-KVIK LOCO PGS + sparse GRM, with INT:
     --max-threads 8
 
 # 3. Build the LDAK pred-list
-./grab --make-ldak-predlist --prefix ldak_step1 --pheno pheno_int.txt --out ldak_pred_list
+cat > ldak_pred_list.txt <<EOF
+bmi	$(pwd)/ldak_step1.step1.pheno1.loco.prs
+ldl	$(pwd)/ldak_step1.step1.pheno2.loco.prs
+EOF
 
 # 4. Build the sparse GRM (one-time cost)
 ./plink2 \
