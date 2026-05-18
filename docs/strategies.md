@@ -48,7 +48,7 @@ underestimated and inflation creeps in. The sparse GRM
 $\widehat{\mathrm{Var}}(S) = \widehat\sigma_g^{\,2}(G)\, R^\top \Phi R$
 restores calibration.
 
-**Action.** Run [Step 0b]({{ site.baseurl }}/docs/step-0b-sparse-grm.html)
+**Action.** Follow [Workflow 2]({{ site.baseurl }}/docs/workflow-2.html)
 and pass `--sp-grm-plink2` when:
 
 - King-robust kinship analysis shows non-trivial 1st–3rd degree

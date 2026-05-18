@@ -53,25 +53,21 @@ unbalanced traits. Per-$\tau$ $p$-values are combined into a single
 
 ## Pipeline
 
-1. **Workflow 1 — LOCO polygenic scores.** Train chromosome-specific PGS
-   on the phenotype using
+1. **Workflow 1 — LOCO PGS + SPA<sub>SQR</sub>.** Train chromosome-specific
+   LOCO polygenic scores with
    [LDAK-KVIK](https://dougspeed.com/ldak-kvik/) or
-   [REGENIE](https://rgcgithub.github.io/regenie/). Optional — but
-   strongly recommended for power.
+   [REGENIE](https://rgcgithub.github.io/regenie/), then run
+   `grab --method SPAsqr` with `--pred-list`. The recommended path for
+   essentially unrelated cohorts.
 
-2. **Step 0b — Sparse GRM.** Construct a sparse genetic relationship
-   matrix using
+2. **Workflow 2 — LOCO PGS + GRM + SPA<sub>SQR</sub>.** In addition to the
+   LOCO PGS, build a sparse genetic relationship matrix using
    [PLINK 2](https://www.cog-genomics.org/plink/2.0/) (preferred since
-   late 2025) or GCTA. Optional — supply when the cohort has
-   non-trivial relatedness.
+   late 2025) or GCTA, and pass it via `--sp-grm-plink2` so that the
+   score-statistic variance is GRM-aware. Recommended whenever the
+   cohort retains first- or second-degree relatives.
 
-3. **Steps 1–2 — Run SPA<sub>SQR</sub>.** A single
-   `grab --method SPAsqr` call reads the phenotype + covariates,
-   fits the null SQR model per chromosome with bandwidth
-   $h = \mathrm{IQR}(\tilde Y - \hat Y_{-c}) / k$, applies SPA in the
-   tails, and writes one tab-delimited result file per phenotype.
-
-4. **(Optional) Effect-size estimation.** Re-run with
+3. **(Optional) Effect-size estimation.** Re-run with
    `--spasqr-mode wald` to obtain per-marker per-$\tau$
    $\hat\beta_G$ and SE via M-estimation sandwich variance.
 
@@ -79,7 +75,7 @@ unbalanced traits. Per-$\tau$ $p$-values are combined into a single
 
 - [Installation]({{ site.baseurl }}/docs/installation.html) — building the GRAB binary.
 - [Workflow 1: LOCO PGS + SPA<sub>SQR</sub>]({{ site.baseurl }}/docs/workflow-1.html)
-- [Step 0b — Sparse GRM]({{ site.baseurl }}/docs/step-0b-sparse-grm.html)
+- [Workflow 2: LOCO PGS + GRM + SPA<sub>SQR</sub>]({{ site.baseurl }}/docs/workflow-2.html)
 - [Running SPA<sub>SQR</sub>]({{ site.baseurl }}/docs/running-spasqr.html) — the main usage page.
 - [Effect-size estimation]({{ site.baseurl }}/docs/effect-size-estimation.html) — Wald mode.
 - [Strategies for improving statistical power]({{ site.baseurl }}/docs/strategies.html)

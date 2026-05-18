@@ -8,7 +8,13 @@ has_children: false
 
 # **Workflow 1: LOCO PGS + SPA<sub>SQR</sub>**
 
-In this section we give a detailed tutorial on how to run SPA<sub>SQR</sub> association testing using **leave-one-chromosome-out (LOCO) polygenic scores (PGS)** as an offset. LOCO PGS are per-subject predictions of the trait built from variants on every chromosome *except* the one currently being tested. SPA<sub>SQR</sub> subtracts the chromosome-specific LOCO PGS from the trait before fitting the null smoothed quantile regression model on each chromosome, which helps control for relatedness and substantially improves the statistical power of our score tests.
+In this section we give a detailed tutorial on how to run SPA<sub>SQR</sub> association testing using **leave-one-chromosome-out (LOCO) polygenic scores (PGS)** as an offset. LOCO PGS are per-subject predictions of the trait built from variants on every chromosome *except* the one currently being tested. SPA<sub>SQR</sub> subtracts the chromosome-specific LOCO PGS from the trait before fitting the null smoothed quantile regression model: for each chromosome $c$ and quantile level $\tau$,
+
+$$
+\widetilde{\beta}_{h,\tau} \;=\; \arg\min_{\beta} \; \frac{1}{n} \sum_{i=1}^n \ell_{h,\tau}\!\left( \tilde Y_i - \hat Y_{-c,i} - X_i^{\!\top} \beta \right),
+$$
+
+where $\tilde Y$ is the (optionally INT-transformed) trait, $\hat Y_{-c}$ is the LOCO PGS column for chromosome $c$ entering as an offset, $X$ is the covariate matrix with an intercept, and $\ell_{h,\tau}$ is the Gaussian-kernel-smoothed quantile check loss with bandwidth $h = \mathrm{IQR}(\tilde Y - \hat Y_{-c})/k$. Absorbing the LOCO PGS as an offset removes the polygenic background driven by other chromosomes, which controls residual relatedness and substantially improves the statistical power of the per-variant score tests on chromosome $c$.
 
 Although SPA<sub>SQR</sub> is a quantile GWAS method, LOCO PGS computed using *linear* GWAS software work very well for our purpose. We therefore outsource PGS construction to either [**LDAK-KVIK**](https://dougspeed.com/ldak-kvik/) or [**REGENIE**](https://rgcgithub.github.io/regenie/).
 

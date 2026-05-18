@@ -89,7 +89,7 @@ each with the schema described in [Output format](#output-format).
 | `--pheno-name` | (all) | Comma-separated list of trait columns to test. Omitting tests every Y column. |
 | `--covar` + `--covar-name` | — | Covariate file + columns. An intercept is added automatically. |
 | `--pred-list` | — | LOCO PGS file pairing. See [Workflow 1]({{ site.baseurl }}/docs/workflow-1.html). |
-| `--sp-grm-plink2` | — | Sparse GRM (`.grm.sp`). See [Step 0b]({{ site.baseurl }}/docs/step-0b-sparse-grm.html). |
+| `--sp-grm-plink2` | — | Sparse GRM (`.grm.sp`). See [Workflow 2]({{ site.baseurl }}/docs/workflow-2.html). |
 | `--spasqr-taus` | `0.1,0.3,0.5,0.7,0.9` | Quantile grid. Max 20 values. |
 | `--spasqr-h-scale` | `3` (score) / `10` (wald) | Bandwidth divisor: $h = \mathrm{IQR}(Y)/k$. Smaller $k$ ⇒ larger $h$ ⇒ smoother. |
 | `--spasqr-h` | (auto) | Explicit bandwidth. Mutually exclusive with `--spasqr-h-scale`. |
