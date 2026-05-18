@@ -19,30 +19,30 @@ Throughout this page we use the same set of files:
 
 ```
 geno.{bed,bim,fam}    PLINK fileset of variants to test
-pheno.txt             phenotype file, two traits Y1 and Y2
-covar.txt             covariate file with columns covar1 and covar2
+pheno.txt             phenotype file, two traits bmi and ldl
+covar.txt             covariate file with columns age and sex
 ```
 
 For concreteness, `pheno.txt` has the following first few rows
 
 ```
 $ head pheno.txt
-FID    IID         Y1     Y2
-fam1   sample1   11.8    9.1
-fam1   sample2    3.7    0.5
-fam2   sample3    9.5    2.2
-fam3   sample4    8.4   12.0
+FID    IID         bmi      ldl
+fam1   sample1    24.3    138.4
+fam1   sample2    31.7    102.5
+fam2   sample3    27.5    156.2
+fam3   sample4    22.1    119.0
 ```
 
 and `covar.txt` similarly:
 
 ```
 $ head covar.txt
-FID    IID       covar1   covar2
-fam1   sample1    0.31     1.04
-fam1   sample2   -0.85    -0.22
-fam2   sample3    0.07     0.91
-fam3   sample4   -1.12     0.45
+FID    IID         age    sex
+fam1   sample1      52      1
+fam1   sample2      45      0
+fam2   sample3      61      1
+fam3   sample4      38      0
 ```
 
 The FID and IID columns of `pheno.txt` and `covar.txt` should match those in `geno.fam`. These simulated data are available in our Github Repository for users to replicate this tutorial. Note that GRAB automatically adds an intercept to the covariates, so there is no need to include an intercept column in `covar.txt`.
@@ -61,11 +61,11 @@ The output `pheno_int.txt` contains the normalized phenotypes, with missing valu
 
 ```
 $ head pheno_int.txt
-FID    IID         Y1           Y2
-fam1   sample1     1.049         0.842
-fam1   sample2    -0.299        -1.064
-fam2   sample3     0.674         0.299
-fam3   sample4     0.522         1.281
+FID    IID         bmi          ldl
+fam1   sample1    -0.299         0.522
+fam1   sample2     1.049        -1.064
+fam2   sample3     0.299         1.281
+fam3   sample4    -0.842        -0.674
 ```
 
 ## Computing the LOCO PGS with LDAK-KVIK
@@ -85,8 +85,8 @@ We can compute LOCO PGS via LDAK-KVIK step 1 with:
 With `--mpheno ALL`, LDAK-KVIK produces one LOCO PGS file per phenotype column in `pheno_int.txt`, named by the trait's **position** in the phenotype file rather than its column name:
 
 ```
-ldak_step1.step1.pheno1.loco.prs        (LOCO PGS for Y1)
-ldak_step1.step1.pheno2.loco.prs        (LOCO PGS for Y2)
+ldak_step1.step1.pheno1.loco.prs        (LOCO PGS for bmi)
+ldak_step1.step1.pheno2.loco.prs        (LOCO PGS for ldl)
 ```
 
 Within each LOCO PGS file, every row is one subject's LOCO PGS across the 22 autosomes:
@@ -102,8 +102,8 @@ Unlike REGENIE, LDAK-KVIK does not emit a prediction list pairing each phenotype
 
 ```bash
 cat > ldak_pred_list.txt <<EOF
-Y1	$(pwd)/ldak_step1.step1.pheno1.loco.prs
-Y2	$(pwd)/ldak_step1.step1.pheno2.loco.prs
+bmi	$(pwd)/ldak_step1.step1.pheno1.loco.prs
+ldl	$(pwd)/ldak_step1.step1.pheno2.loco.prs
 EOF
 ```
 
@@ -119,8 +119,8 @@ Provided there are no irrelevant files that also start with `ldak_step1` and end
 
 ```
 $ cat ldak_pred_list.txt
-Y1	/abs/path/to/ldak_step1.step1.pheno1.loco.prs
-Y2	/abs/path/to/ldak_step1.step1.pheno2.loco.prs
+bmi	/abs/path/to/ldak_step1.step1.pheno1.loco.prs
+ldl	/abs/path/to/ldak_step1.step1.pheno2.loco.prs
 ```
 
 
@@ -141,9 +141,9 @@ We may also compute LOCO PGS via REGENIE Step 1:
 This produces one LOCO PGS file per trait plus REGENIE's own prediction list:
 
 ```
-regenie_step1_1.loco          (LOCO PGS for Y1)
-regenie_step1_2.loco          (LOCO PGS for Y2)
-regenie_step1_pred.list       (pairs Y1 and Y2 with their .loco files)
+regenie_step1_1.loco          (LOCO PGS for bmi)
+regenie_step1_2.loco          (LOCO PGS for ldl)
+regenie_step1_pred.list       (pairs bmi and ldl with their .loco files)
 ```
 
 REGENIE's `.loco` format is the **transpose** of LDAK-KVIK's: each row is one chromosome and each column is one subject (with FID and IID joined into a single `FID_IID` token):
@@ -160,8 +160,8 @@ Unlike with LDAK-KVIK, REGENIE produces `regenie_step1_pred.list` which can be p
 
 ```
 $ cat regenie_step1_pred.list
-Y1	/abs/path/to/regenie_step1_1.loco
-Y2	/abs/path/to/regenie_step1_2.loco
+bmi	/abs/path/to/regenie_step1_1.loco
+ldl	/abs/path/to/regenie_step1_2.loco
 ```
 
 ## Running association testing with GRAB
@@ -195,8 +195,8 @@ Below are the required and optional flags.
 | --- | --- | --- |
 | `--pred-list` | — | Prediction list (e.g. `ldak_pred_list.txt` for LDAK-KVIK or `regenie_step1_pred.list` for REGENIE). Omit to run with no LOCO offset — valid but much less powerful. |
 | `--pheno-transform` | `int` | One of `int` / `standardize`. **Must match the transform used during PGS construction.** With `pheno_int.txt` and the INT workflow, leave it at the default. With raw `pheno.txt` fed to LDAK-KVIK or REGENIE, set this to `standardize`. |
-| `--pheno-name` | all Y columns | Comma-separated list of trait columns to analyze (e.g. `Y1,Y2`). Omit to test every `Y` column found in `--pheno`. |
-| `--covar-name` | all covar columns | Comma-separated list of covariate columns to use (e.g. `covar1,covar2`). Omit to use all columns. |
+| `--pheno-name` | all trait columns | Comma-separated list of trait columns to analyze (e.g. `bmi,ldl`). Omit to test every trait column found in `--pheno`. |
+| `--covar-name` | all covar columns | Comma-separated list of covariate columns to use (e.g. `age,sex`). Omit to use all columns. |
 | `--spasqr-taus` | `0.1,0.3,0.5,0.7,0.9` | Quantile levels at which to test, comma-separated (max 20 levels). |
 | `--spasqr-h-scale` | `3` (score mode) | Bandwidth divisor: $h = \mathrm{IQR}(\tilde Y - \hat Y_{-c}) / \text{scale}$. Larger value → less smoothing. |
 | `--threads` | `1` | Number of threads used for parallel computing (e.g. `8`). |
@@ -216,14 +216,14 @@ Variants that fail the above QC constraints are omitted from GWAS results with $
 GRAB writes one output file per phenotype:
 
 ```
-spasqr_results.Y1.SPAsqr
-spasqr_results.Y2.SPAsqr
+spasqr_results.bmi.SPAsqr
+spasqr_results.ldl.SPAsqr
 ```
 
 Each file lists per-variant statistics including per-quantile $p$-values, the Cauchy-combined $P_\mathrm{CCT}$, and per-$\tau$ $Z$-scores:
 
 ```
-$ head -3 spasqr_results.Y1.SPAsqr
+$ head -3 spasqr_results.bmi.SPAsqr
 CHROM  POS      ID          REF  ALT  MISS_RATE   ALT_FREQ  MAC    HWE_P     P_CCT      P_tau0.1  P_tau0.3   P_tau0.5   P_tau0.7    P_tau0.9    Z_tau0.1    Z_tau0.3   Z_tau0.5  Z_tau0.7  Z_tau0.9
 1      1171417  rs6603782   C    T    0.0137558   0.326478  25748  0.536365  0.0071169  0.923124  0.397414   0.0379922  0.00415006  0.00223711  -0.0964998  -0.846248  -2.07494  -2.86651  -3.0567
 1      2236359  rs60363208  G    A    0.00435185  0.173843  13841  0.412157  0.227344   0.273908  0.0829882  0.152614   0.509465    0.70161     1.09411     1.73361    1.43036   0.65967   -0.383148
