@@ -35,7 +35,7 @@ geno_sparse.grm.id    companion ID file: one row per subject, FID  IID
 
 The sparse GRM is a **one-time cost per cohort**: once built, the same `.grm.sp` is reused across every trait, every chromosome, and every quantile. The companion `.grm.id` file lists the subject IDs in the same order as the 0-based indices in `.grm.sp`; GRAB auto-detects it from the `.grm.sp` prefix.
 
-## Computing the sparse GRM with PLINK2
+### Computing the sparse GRM with PLINK2
 
 The GRM is a concept popularized by the [GCTA](https://yanglab.westlake.edu.cn/software/gcta/) software. However, using GCTA to compute the GRM has historically been relatively time-consuming. Since late 2025, [PLINK 2](https://www.cog-genomics.org/plink/2.0/) also supports sparse GRM construction, which is very simple and efficient to use:
 
@@ -64,7 +64,7 @@ $ head geno_sparse.grm.sp
 
 Sample $i$, $j$ indices are **0-based** and correspond to the row order in `geno_sparse.grm.id`. 
 
-## SPA<sub>SQR</sub> association testing with GRM-aware variance
+### SPA<sub>SQR</sub> association testing with GRM-aware variance
 
 With the LOCO PGS prediction list from [Workflow 1]({{ site.baseurl }}/docs/workflow-1.html) and the sparse GRM in hand, we only need to add the `--sp-grm-plink2` flag to use GRM-aware variance in our association testing procedure:
 
@@ -148,6 +148,6 @@ REGENIE LOCO PGS + sparse GRM, with INT:
     --out spasqr_results
 ```
 
-## When to skip the sparse GRM
+### When to skip the sparse GRM
 
 The sparse GRM is purely a variance-calibration device: omitting it does not bias the score statistic itself, only its reference distribution. It can be omitted when the study cohort has an objectively low degree of relatedness, in which case $R^{\top}\, R \approx R^{\top}\,\Phi\, R$ and the GWAS results are mostly similar. Additionally, it is well-known that the GRM can be highly inaccurate when computed from genotypes spanning multiple ancestries; we therefore also advise against using this feature for multi-ancestry data.
