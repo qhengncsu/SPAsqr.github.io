@@ -8,7 +8,7 @@ has_children: false
 
 # **Workflow 1: LOCO PGS + SPA<sub>SQR</sub>**
 
-In this section we give a detailed tutorial on how to run SPA<sub>SQR</sub> association testing using a **leave-one-chromosome-out (LOCO) polygenic score (PGS)** as an offset. A LOCO PGS is a per-subject prediction of the trait built from variants on every chromosome *except* the one currently being tested. SPA<sub>SQR</sub> subtracts the chromosome-specific LOCO PGS from the trait before fitting the null smoothed quantile regression model on each chromosome, which helps control for relatedness and substantially improves the statistical power of our score tests.
+In this section we give a detailed tutorial on how to run SPA<sub>SQR</sub> association testing using **leave-one-chromosome-out (LOCO) polygenic scores (PGS)** as an offset. LOCO PGS are per-subject predictions of the trait built from variants on every chromosome *except* the one currently being tested. SPA<sub>SQR</sub> subtracts the chromosome-specific LOCO PGS from the trait before fitting the null smoothed quantile regression model on each chromosome, which helps control for relatedness and substantially improves the statistical power of our score tests.
 
 Although SPA<sub>SQR</sub> is a quantile GWAS method, LOCO PGS computed using *linear* GWAS software work very well for our purpose. We therefore outsource PGS construction to either [**LDAK-KVIK**](https://dougspeed.com/ldak-kvik/) or [**REGENIE**](https://rgcgithub.github.io/regenie/).
 
@@ -45,13 +45,13 @@ fam2   sample3    0.07     0.91
 fam3   sample4   -1.12     0.45
 ```
 
-The FID and IID columns of `pheno.txt` and `covar.txt` should match those in `geno.fam`. These simulated data are available in our Github Repository so users can try to replicate this tutorial. Note that GRAB automatically adds an intercept to the covariates, so there is no need to include an intercept column in `covar.txt`.
+The FID and IID columns of `pheno.txt` and `covar.txt` should match those in `geno.fam`. These simulated data are available in our Github Repository for users to replicate this tutorial. Note that GRAB automatically adds an intercept to the covariates, so there is no need to include an intercept column in `covar.txt`.
 
-To utilize the LOCO PGS, we also need a small text file called a **prediction list** — a two-column table pairing each phenotype name (column 1) with the absolute path to its LOCO PGS file (column 2). The prediction list is what GRAB reads (via the `--pred-list` argument) so that it knows which PGS file is paired with which trait. This file format is a REGENIE convention that we follow here.
+For GRAB to utilize the LOCO PGS, we also need a small text file called a **prediction list** — a two-column table pairing each phenotype name (column 1) with the absolute path to its LOCO PGS file (column 2). The prediction list is what GRAB reads (via the `--pred-list` argument) so that it knows which PGS file is paired with which trait. This file format mimics the workflow of REGENIE.
 
-## INT pre-transformation
+## Inverse normal transformation
 
-Before computing the PGS we recommend applying a **rank-based inverse normal transformation (INT)** to each trait's non-missing values, because in our UK Biobank analysis we find that doing so generally yields more associations than skipping it; this is likely because the LOCO PGS are more accurate when computed on an INT-transformed trait. GRAB offers a utility for applying INT on the phenotype file:
+Before computing the PGS we recommend applying a **rank-based inverse normal transformation (INT)** to each trait's non-missing values, because in real data analysis we find that doing so generally yields more associations than skipping it; this is likely because the LOCO PGS are more accurate when computed on an INT-transformed trait. GRAB offers a utility for applying INT on the phenotype file:
 
 ```bash
 ./grab --int-pheno --pheno pheno.txt --out pheno_int
@@ -98,7 +98,7 @@ fam1   sample1     0.124   -0.083    0.211         0.196
 fam1   sample2    -0.241    0.018   -0.135        -0.057
 ```
 
-Unlike REGENIE, LDAK-KVIK does not emit a prediction list pairing each phenotype with its LOCO PGS file. One can create `ldak_pred_list.txt` manually with the following shell snippet:
+Unlike REGENIE, LDAK-KVIK does not emit a prediction list pairing each phenotype with its LOCO PGS file. One needs to create `ldak_pred_list.txt` manually with the following shell snippet:
 
 ```bash
 cat > ldak_pred_list.txt <<EOF
@@ -115,7 +115,7 @@ GRAB also offers a utility that synthesizes `ldak_pred_list.txt` by scanning the
 ./grab --make-ldak-predlist --prefix ldak_step1 --pheno pheno_int.txt --out ldak_pred_list
 ```
 
-Provided there are no irrelevant files that also start with `ldak_step1` and end with `.loco.prs`,  the above command writes `ldak_pred_list.txt` with the following content:
+Provided there are no irrelevant files that also start with `ldak_step1` and end with `.loco.prs` in current working directory,  the above command writes `ldak_pred_list.txt` with the following content:
 
 ```
 $ cat ldak_pred_list.txt
@@ -154,6 +154,8 @@ FID_IID       fam1_sample1   fam1_sample2   fam2_sample3   ...
 1             0.0497         -0.0624         -0.0156
 2             0.0502         -0.0558         -0.0152
 ```
+GRAB auto-detects the format from the file header and can distinguish whether the LOCO PGS files are produced by LDAK-KVIK or REGENIE.
+
 Unlike with LDAK-KVIK, REGENIE produces `regenie_step1_pred.list` which can be passed directly to GRAB's `--pred-list` option:
 
 ```
@@ -162,12 +164,9 @@ Y1	/abs/path/to/regenie_step1_1.loco
 Y2	/abs/path/to/regenie_step1_2.loco
 ```
 
-GRAB auto-detects the format from the file header and can distinguish whether the LOCO PGS files are produced by LDAK-KVIK or REGENIE.
-
-
 ## Running association testing with GRAB
 
-Once the prediction list is ready, null model fitting and association testing is performed via a single `grab` call:
+Once the prediction list is ready, null model fitting (SPA<sub>SQR</sub> step 1) and association testing (SPA<sub>SQR</sub> 2) is performed via a single `grab` call:
 
 ```bash
 ./grab --method SPAsqr \
@@ -178,17 +177,17 @@ Once the prediction list is ready, null model fitting and association testing is
     --out spasqr_results
 ```
 
-The flags split into a small set you almost always set, plus a wider set you reach for as needed.
+Below are the required and optional flags.
 
 **Required:**
 
 | Flag | What it does |
 | --- | --- |
 | `--method` | Selects the GRAB method to run; use `SPAsqr` to trigger SPA<sub>SQR</sub> and all of the `--spasqr-*` options below. |
-| `--bfile` | PLINK 1 genotype fileset prefix (e.g. `geno` for `geno.{bed,bim,fam}`). PLINK 2 (`--pfile`), VCF (`--vcf`), and BGEN (`--bgen`) are also accepted — exactly one of the four is required. |
+| `--bfile` | PLINK 1 genotype fileset prefix (e.g. `geno` for `geno.{bed,bim,fam}`). PLINK 2 (`--pfile`), VCF (`--vcf`), and BGEN (`--bgen`) are also accepted — exactly one of the four is needed. |
 | `--pheno` | Phenotype file (e.g. `pheno_int.txt`). Starts with `FID` and `IID`. |
 | `--covar` | Covariate file (e.g. `covar.txt`). Starts with `FID` and `IID`. GRAB adds an intercept automatically — do not include one in the file. |
-| `--out` | Output prefix (e.g. `spasqr_results`). GRAB appends `.<phenoname>.SPAsqr` so each trait gets its own tab-delimited result file. |
+| `--out` | Output prefix (e.g. `spasqr_results`). Each trait gets its own tab-delimited result file. |
 
 **Optional:**
 
@@ -196,8 +195,8 @@ The flags split into a small set you almost always set, plus a wider set you rea
 | --- | --- | --- |
 | `--pred-list` | — | Prediction list (e.g. `ldak_pred_list.txt` for LDAK-KVIK or `regenie_step1_pred.list` for REGENIE). Omit to run with no LOCO offset — valid but much less powerful. |
 | `--pheno-transform` | `int` | One of `int` / `standardize`. **Must match the transform used during PGS construction.** With `pheno_int.txt` and the INT workflow, leave it at the default. With raw `pheno.txt` fed to LDAK-KVIK or REGENIE, set this to `standardize`. |
-| `--pheno-name` | all Y columns | Comma-separated list of trait columns to test (e.g. `Y1,Y2`). Omit to test every `Y` column found in `--pheno`. |
-| `--covar-name` | all covar columns | Comma-separated list of covariate columns to use (e.g. `covar1,covar2`). |
+| `--pheno-name` | all Y columns | Comma-separated list of trait columns to analyze (e.g. `Y1,Y2`). Omit to test every `Y` column found in `--pheno`. |
+| `--covar-name` | all covar columns | Comma-separated list of covariate columns to use (e.g. `covar1,covar2`). Omit to use all columns. |
 | `--spasqr-taus` | `0.1,0.3,0.5,0.7,0.9` | Quantile levels at which to test, comma-separated (max 20 levels). |
 | `--spasqr-h-scale` | `3` (score mode) | Bandwidth divisor: $h = \mathrm{IQR}(\tilde Y - \hat Y_{-c}) / \text{scale}$. Larger value → less smoothing. |
 | `--threads` | `1` | Number of threads used for parallel computing (e.g. `8`). |
@@ -230,10 +229,11 @@ CHROM  POS      ID          REF  ALT  MISS_RATE   ALT_FREQ  MAC    HWE_P     P_C
 1      2236359  rs60363208  G    A    0.00435185  0.173843  13841  0.412157  0.227344   0.273908  0.0829882  0.152614   0.509465    0.70161     1.09411     1.73361    1.43036   0.65967   -0.383148
 ```
 
-The first nine columns are the variant identifier and standard variant-level QC fields. `P_CCT` is the Cauchy-combined $p$-value across all $\tau$ levels and is the main genome-wide significance number to take to a Manhattan plot. The `P_tauX` and `Z_tauX` columns give the per-quantile $p$-values and $Z$-scores; comparing them across $\tau$ reveals whether a hit is driven by a mean shift (uniform signal across $\tau$), a tail effect (concentrated at extreme $\tau$), or a heteroskedastic / dispersion effect (sign change between low and high $\tau$).
+The first nine columns are the variant identifier and standard variant-level QC fields. `P_CCT` is the Cauchy-combined $p$-value across all $\tau$ levels and is the main genome-wide significance result. The `P_tauX` and `Z_tauX` columns give the per-quantile $p$-values and $Z$-scores; comparing them across $\tau$ yields insight into the heterogeneity of effect sizes across the phenotype distribution.
+
 ### End-to-end recipes (with INT)
 
-With LDAK-KVIK:
+LDAK-KVIK LOCO PGS with INT:
 
 ```bash
 # 1. INT-transform the phenotype
@@ -259,7 +259,7 @@ With LDAK-KVIK:
     --out spasqr_results
 ```
 
-With REGENIE (no separate `--make-ldak-predlist` step — REGENIE emits its own prediction list):
+REGENIE LOCO PGS with INT:
 
 ```bash
 # 1. INT-transform the phenotype
@@ -274,7 +274,7 @@ With REGENIE (no separate `--make-ldak-predlist` step — REGENIE emits its own 
     --bsize 1000 \
     --out regenie_step1
 
-# 3. Run SPAsqr with REGENIE's native pred-list; --pheno-transform int is the default
+# 3. Run SPAsqr with REGENIE's native pred-list
 ./grab --method SPAsqr \
     --bfile geno \
     --pheno pheno_int.txt \
@@ -283,11 +283,11 @@ With REGENIE (no separate `--make-ldak-predlist` step — REGENIE emits its own 
     --out spasqr_results
 ```
 
-## Skipping the INT pre-transform
+## Skipping the INT
 
-You may also skip the INT pre-transform and feed the raw `pheno.txt` directly to LDAK-KVIK or REGENIE. Before fitting the LOCO PGS, both LDAK-KVIK and REGENIE internally regress the covariates out of the trait and then standardize the residuals to mean zero and unit variance, so the LOCO PGS still live on a **standardized scale**, not on the scale of the raw `Y` column. In this case, pass `--pheno-transform standardize` to GRAB at association testing so that the trait and the LOCO PGS live on the same scale.
+You may also skip the INT and feed the raw `pheno.txt` directly to LDAK-KVIK or REGENIE. Before fitting the LOCO PGS, both LDAK-KVIK and REGENIE internally regress the covariates out of the trait and then standardize the residuals to mean zero and unit variance, so the LOCO PGS still live on a **standardized scale**, instead of the scale of the raw `Y` column. Thus, we should pass `--pheno-transform standardize` to GRAB at association testing so that the trait and the LOCO PGS live on the same scale.
 
-The complete LDAK-KVIK + SPA<sub>SQR</sub> workflow without INT:
+LDAK-KVIK LOCO PGS without INT:
 
 ```bash
 # 1. Train the LOCO PGS on raw Y
@@ -311,7 +311,7 @@ The complete LDAK-KVIK + SPA<sub>SQR</sub> workflow without INT:
     --out spasqr_results
 ```
 
-And the complete REGENIE + SPA<sub>SQR</sub> workflow without INT:
+REGENIE LOCO PGS without INT:
 
 ```bash
 # 1. Train the LOCO PGS on raw Y
