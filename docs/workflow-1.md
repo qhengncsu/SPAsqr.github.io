@@ -47,6 +47,8 @@ fam3   sample4      38      0
 
 The FID and IID columns of `pheno.txt` and `covar.txt` should match those in `geno.fam`. These simulated data are available in our Github Repository for users to replicate this tutorial. Note that GRAB automatically adds an intercept to the covariates, so there is no need to include an intercept column in `covar.txt`.
 
+For simplicity, this tutorial uses the same `geno.{bed,bim,fam}` fileset for both LOCO PGS construction and SPA<sub>SQR</sub> association testing. In practice, the two stages typically use different variant subsets: LOCO PGS is usually trained on directly genotyped (unimputed) array variants — a few hundred thousand high-quality SNPs — since imputed variants add measurement noise and slow down training without materially improving the offset. Association testing, by contrast, is run on the full imputed dataset (tens of millions of variants, including rare ones) to maximize discovery. The two filesets should share the same FID/IID set, but they need not contain the same variants.
+
 For GRAB to utilize the LOCO PGS, we also need a small text file called a **prediction list** — a two-column table pairing each phenotype name (column 1) with the absolute path to its LOCO PGS file (column 2). The prediction list is what GRAB reads (via the `--pred-list` argument) so that it knows which PGS file is paired with which trait. This file format mimics the workflow of REGENIE.
 
 ## Inverse normal transformation
