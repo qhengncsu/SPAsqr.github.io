@@ -14,9 +14,8 @@ $$
 \widetilde{\beta}_{h,\tau} \;=\; \arg\min_{\beta} \; \frac{1}{n} \sum_{i=1}^n \ell_{h,\tau}\!\left( \tilde Y_i - \hat Y_{-c,i} - X_i^{\!\top} \beta \right),
 $$
 
-where $\tilde Y$ is the (optionally INT-transformed) trait, $\hat Y_{-c}$ is the LOCO PGS column for chromosome $c$ entering as an offset, $X$ is the covariate matrix with an intercept, and $\ell_{h,\tau}$ is the Gaussian-kernel-smoothed quantile check loss with bandwidth $h = \mathrm{IQR}(\tilde Y - \hat Y_{-c})/k$. Absorbing the LOCO PGS as an offset removes the polygenic background driven by other chromosomes, which controls residual relatedness and substantially improves the statistical power of the per-variant score tests on chromosome $c$.
-
-Although SPA<sub>SQR</sub> is a quantile GWAS method, LOCO PGS computed using *linear* GWAS software work very well for our purpose. We therefore outsource PGS construction to either [**LDAK-KVIK**](https://dougspeed.com/ldak-kvik/) or [**REGENIE**](https://rgcgithub.github.io/regenie/).
+where $\tilde Y$ is the trait after rank-based inverse normal transformation, $\hat Y_{-c}$ is the LOCO PGS for chromosome $c$, $X$ is the covariate matrix, and $\ell_{h,\tau}$ is the Gaussian-kernel convolution smoothed quantile check loss with bandwidth $h = \mathrm{IQR}(\tilde Y - \hat Y_{-c})/k$. Absorbing the LOCO PGS as an offset removes the polygenic background driven by other chromosomes, which controls for relatedness and substantially improves the statistical power of the per-variant score tests.
+Although SPA<sub>SQR</sub> is a quantile GWAS method, LOCO PGS computed using *linear* GWAS software work very well for our purpose. We therefore outsource the task of PGS construction to either [**LDAK-KVIK**](https://dougspeed.com/ldak-kvik/) or [**REGENIE**](https://rgcgithub.github.io/regenie/).
 
 
 ## Data that you will need
@@ -53,7 +52,7 @@ fam3   sample4      38      0
 
 The FID and IID columns of `pheno.txt` and `covar.txt` should match those in `geno.fam`. These simulated data are available in our Github Repository for users to replicate this tutorial. Note that GRAB automatically adds an intercept to the covariates, so there is no need to include an intercept column in `covar.txt`.
 
-For simplicity, this tutorial uses the same `geno.{bed,bim,fam}` fileset for both LOCO PGS construction and SPA<sub>SQR</sub> association testing. In practice, the two stages typically use different variant subsets: LOCO PGS is usually trained on directly genotyped (unimputed) array variants — a few hundred thousand high-quality SNPs — since imputed variants add measurement noise and slow down training without materially improving the offset. Association testing, by contrast, is run on the full imputed dataset (tens of millions of variants, including rare ones) to maximize discovery. The two filesets should share the same FID/IID set, but they need not contain the same variants.
+For simplicity, this tutorial uses the same `geno.{bed,bim,fam}` fileset for both LOCO PGS construction and SPA<sub>SQR</sub> association testing. In practice, the two stages typically use different variant subsets: LOCO PGS is usually trained on directly genotyped (unimputed) variants — a few hundred thousand high-quality SNPs — since imputed variants add measurement noise and slow down training without materially improving the accuracy of the LOCO PGS. Association testing, by contrast, is run on the full imputed dataset (tens of millions of variants, including rare ones) to maximize discovery. 
 
 For GRAB to utilize the LOCO PGS, we also need a small text file called a **prediction list** — a two-column table pairing each phenotype name (column 1) with the absolute path to its LOCO PGS file (column 2). The prediction list is what GRAB reads (via the `--pred-list` argument) so that it knows which PGS file is paired with which trait. This file format mimics the workflow of REGENIE.
 
@@ -174,7 +173,7 @@ ldl	/abs/path/to/regenie_step1_2.loco
 
 ## Running association testing with GRAB
 
-Once the prediction list is ready, null model fitting (SPA<sub>SQR</sub> step 1) and association testing (SPA<sub>SQR</sub> 2) is performed via a single `grab` call:
+Once the prediction list is ready, null model fitting (SPA<sub>SQR</sub> step 1) and association testing (SPA<sub>SQR</sub> 2) is completed in a single `grab` call:
 
 ```bash
 ./grab --method SPAsqr \
@@ -293,7 +292,7 @@ REGENIE LOCO PGS with INT:
 
 ## Skipping the INT
 
-You may also skip the INT and feed the raw `pheno.txt` directly to LDAK-KVIK or REGENIE. Before fitting the LOCO PGS, both LDAK-KVIK and REGENIE internally regress the covariates out of the trait and then standardize the residuals to mean zero and unit variance, so the LOCO PGS still live on a **standardized scale**, instead of the scale of the raw `Y` column. Thus, we should pass `--pheno-transform standardize` to GRAB at association testing so that the trait and the LOCO PGS live on the same scale.
+We may also skip the INT and feed the raw `pheno.txt` directly to LDAK-KVIK or REGENIE. Before fitting the LOCO PGS, both LDAK-KVIK and REGENIE internally regress the covariates out of the trait and then standardize the residuals to mean zero and unit variance, so the LOCO PGS still live on a **standardized scale**, instead of the scale of the raw `Y` column. Thus, we should pass `--pheno-transform standardize` to GRAB at association testing so that the trait and the LOCO PGS live on the same scale.
 
 LDAK-KVIK LOCO PGS without INT:
 
