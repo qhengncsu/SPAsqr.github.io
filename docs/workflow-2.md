@@ -21,10 +21,10 @@ where $G_{ik}$ is the genotype of variant $k$ in subject $i$, $\mu_k$ is the alt
 SPA<sub>SQR</sub> plugs the sparse GRM into the score variance:
 
 $$
-\widehat{\mathrm{Var}}(S_j) \;=\; \widehat{\sigma}_g^{\,2}(G_j)\, R^{\!\top}\,\Phi\, R.
+\widehat{\mathrm{Var}}(S_j) \;=\; \widehat{\sigma}_g^{\,2}(G_j)\, R^{\top}\,\Phi\, R.
 $$
 
-For genuinely unrelated cohorts $\Phi \approx I_n$ and the formula reduces to the unrelated variance $\widehat{\sigma}_g^{\,2}(G_j)\, R^{\!\top}\, R$. 
+For genuinely unrelated cohorts $\Phi \approx I_n$ and the formula reduces to the unrelated variance $\widehat{\sigma}_g^{\,2}(G_j)\, R^{\top}\, R$. 
 
 In addition to the files from [Workflow 1]({{ site.baseurl }}/docs/workflow-1.html) — `geno.{bed,bim,fam}`, `pheno.txt`, `covar.txt`, and the LOCO PGS prediction list `ldak_pred_list.txt` (or `regenie_step1_pred.list`) — Workflow 2 requires two additional files:
 
@@ -33,7 +33,7 @@ geno_sparse.grm.sp    sparse GRM, three columns: 0-based i, 0-based j, correlati
 geno_sparse.grm.id    companion ID file: one row per subject, FID  IID
 ```
 
-The sparse GRM is a **one-time cost per cohort**: once built, the same `.grm.sp` is reused across every trait, every PGS choice, and every quantile. The companion `.grm.id` file lists the subject IDs in the same order as the 0-based indices in `.grm.sp`; GRAB auto-detects it from the `.grm.sp` prefix.
+The sparse GRM is a **one-time cost per cohort**: once built, the same `.grm.sp` is reused across every trait, every chromosome, and every quantile. The companion `.grm.id` file lists the subject IDs in the same order as the 0-based indices in `.grm.sp`; GRAB auto-detects it from the `.grm.sp` prefix.
 
 ## Computing the sparse GRM with PLINK2
 
@@ -62,7 +62,7 @@ $ head geno_sparse.grm.sp
 4   3   0.2503      # first cousin of subject 3
 ```
 
-Sample $i$/$j$ indices are **0-based** and correspond to the row order in `geno_sparse.grm.id`. 
+Sample $i$, $j$ indices are **0-based** and correspond to the row order in `geno_sparse.grm.id`. 
 
 ## SPA<sub>SQR</sub> association testing with GRM-aware variance
 
@@ -150,4 +150,4 @@ REGENIE LOCO PGS + sparse GRM, with INT:
 
 ## When to skip the sparse GRM
 
-The sparse GRM is purely a variance-calibration device: omitting it does not bias the score statistic itself, only its reference distribution. It can be omitted when the study cohort has an objectively low degree of relatedness, in which case $R^{\!\top}\, R \approx R^{\!\top}\,\Phi\, R$ and the GWAS results are mostly similar. Additionally, it is well-known that the GRM can be highly inaccurate when computed from genotypes spanning multiple ancestries; we therefore also advise against using this feature for multi-ancestry data.
+The sparse GRM is purely a variance-calibration device: omitting it does not bias the score statistic itself, only its reference distribution. It can be omitted when the study cohort has an objectively low degree of relatedness, in which case $R^{\top}\, R \approx R^{\top}\,\Phi\, R$ and the GWAS results are mostly similar. Additionally, it is well-known that the GRM can be highly inaccurate when computed from genotypes spanning multiple ancestries; we therefore also advise against using this feature for multi-ancestry data.
