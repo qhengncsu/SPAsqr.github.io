@@ -196,7 +196,7 @@ default settings GRAB peaks at ~6–8 GB resident.
 ## Where to ask for help
 
 - Open an issue at
-  [github.com/qhengncsu/GRAB-feat-cpp](https://github.com/qhengncsu/GRAB-feat-cpp/issues)
+  [github.com/GeneticAnalysisinBiobanks/GRAB](https://github.com/GeneticAnalysisinBiobanks/GRAB/issues)
   with a minimal repro and the relevant `--log` output.
 - Email the corresponding author of the SPA<sub>SQR</sub> manuscript
   (address on the paper).

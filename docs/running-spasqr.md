@@ -37,7 +37,7 @@ We assume the artifacts produced by [Workflow 1]({{ site.baseurl }}/docs/workflo
 - `1kg.grm.sp` — sparse GRM built by `plink2 --make-grm-sparse` (optional but recommended).
 - `ldak_pred_list.txt` — prediction list pairing each phenotype with its LOCO PGS file.
 
-All input data are downloadable from the [`examples/`](https://github.com/qhengncsu/GRAB-feat-cpp/tree/main/examples) folder of the [GRAB GitHub repository](https://github.com/qhengncsu/GRAB-feat-cpp) (also linked at the top-right of this page).
+All input data are downloadable from the [`examples/`](https://github.com/GeneticAnalysisinBiobanks/GRAB/tree/main/examples) folder of the [GRAB GitHub repository](https://github.com/GeneticAnalysisinBiobanks/GRAB) (also linked at the top-right of this page).
 
 The prediction list looks like:
 

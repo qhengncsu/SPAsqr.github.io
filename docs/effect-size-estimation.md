@@ -49,7 +49,7 @@ once **per (marker, $\tau$)** by smoothed M-estimation, and returns
 
 ## Example
 
-Restrict to a set of GWAS hits (one ID per line in `spasqr_wald_extract`) and re-run in Wald mode. The GRAB source distribution ships an 8-variant demonstration list at [`examples/spasqr_wald_extract`](https://github.com/qhengncsu/GRAB-feat-cpp/tree/main/examples) that can be copied into the working directory:
+Restrict to a set of GWAS hits (one ID per line in `spasqr_wald_extract`) and re-run in Wald mode. The GRAB source distribution ships an 8-variant demonstration list at [`examples/spasqr_wald_extract`](https://github.com/GeneticAnalysisinBiobanks/GRAB/tree/main/examples) that can be copied into the working directory:
 
 ```
 $ cat spasqr_wald_extract

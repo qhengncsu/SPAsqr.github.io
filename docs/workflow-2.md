@@ -35,7 +35,7 @@ In addition to the files from [Workflow 1]({{ site.baseurl }}/docs/workflow-1.ht
 
 The sparse GRM is a **one-time cost per cohort**: once built, the same `.grm.sp` is reused across every trait, every chromosome, and every quantile. The companion `.grm.id` file lists the subject IDs in the same order as the 0-based indices in `.grm.sp`; GRAB auto-detects it from the `.grm.sp` prefix.
 
-A pre-built `1kg.grm.sp` / `1kg.grm.id` pair, together with all the inputs from Workflow 1, is available in the [`examples/`](https://github.com/qhengncsu/GRAB-feat-cpp/tree/main/examples) folder of the [GRAB GitHub repository](https://github.com/qhengncsu/GRAB-feat-cpp) (also linked at the top-right of this page) for users to replicate this tutorial verbatim.
+A pre-built `1kg.grm.sp` / `1kg.grm.id` pair, together with all the inputs from Workflow 1, is available in the [`examples/`](https://github.com/GeneticAnalysisinBiobanks/GRAB/tree/main/examples) folder of the [GRAB GitHub repository](https://github.com/GeneticAnalysisinBiobanks/GRAB) (also linked at the top-right of this page) for users to replicate this tutorial verbatim.
 
 
 ## Computing the sparse GRM with PLINK 2

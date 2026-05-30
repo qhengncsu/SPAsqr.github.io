@@ -9,7 +9,7 @@ has_children: false
 # **Installation**
 
 SPA<sub>SQR</sub> ships as the `SPAsqr` method of the
-[**GRAB**](https://github.com/qhengncsu/GRAB-feat-cpp) command-line
+[**GRAB**](https://github.com/GeneticAnalysisinBiobanks/GRAB) command-line
 binary. GRAB is a pure C++17 application; **all third-party
 dependencies are vendored** in `third_party/` (Eigen, Boost
 headers-only subset, zlib, zstd, libdeflate, plink2/pgenlib, bgen,
@@ -22,13 +22,13 @@ macOS, and Windows** (MSYS2 / MinGW).
 ## Quick install
 
 ```bash
-git clone https://github.com/qhengncsu/GRAB-feat-cpp.git
-cd GRAB-feat-cpp
-make -j$(nproc)             # or sysctl -n hw.ncpu on macOS
-./build/grab --help SPAsqr  # smoke-test
+git clone https://github.com/GeneticAnalysisinBiobanks/GRAB.git
+cd GRAB
+make -j$(nproc)              # or sysctl -n hw.ncpu on macOS
+./build/grab2 --help SPAsqr  # smoke-test
 ```
 
-The build produces `build/grab` (or `build/grab.exe` on Windows). Copy
+The build produces `build/grab2` (or `build/grab2.exe` on Windows). Copy
 it to anywhere on your `$PATH` and you're done — there is no install
 step, no shared library, and no headers exposed to users.
 
