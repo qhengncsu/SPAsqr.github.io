@@ -8,7 +8,7 @@ has_children: false
 
 # **Running SPA<sub>SQR</sub>**
 
-A single `./grab --method SPAsqr` call:
+A single `./grab2 --method SPAsqr` call:
 
 1. Reads the phenotype + covariates and applies the chosen
    `--pheno-transform`.
@@ -29,32 +29,32 @@ A single `./grab --method SPAsqr` call:
 
 ## Worked example
 
-We assume the artifacts produced by the previous two steps:
+We assume the artifacts produced by [Workflow 1]({{ site.baseurl }}/docs/workflow-1.html) and [Workflow 2]({{ site.baseurl }}/docs/workflow-2.html):
 
-- `geno.{bed,bim,fam}` — PLINK fileset of variants to test.
-- `pheno.txt` (or `pheno_int.txt`) — phenotype file, two traits
-  `Y1, Y2`.
-- `covar.txt` — covariate file with columns `covar1, covar2`.
-- `geno_sparse.grm.sp` — sparse GRM (optional but recommended).
-- `grab_predlist.txt` — prediction list pairing each phenotype with its
-  LOCO PGS file.
+- `1kg.{bed,bim,fam}` — PLINK 1 fileset of variants to test.
+- `1kg_int.txt` — INT-transformed phenotype file with traits `Quantitative1`, `Quantitative2`.
+- `1kg.pheno` — full phenotype/covariate file; we pull `MALE,PC1,PC2,PC3,PC4` from it.
+- `1kg.grm.sp` — sparse GRM built by `plink2 --make-grm-sparse` (optional but recommended).
+- `ldak_pred_list.txt` — prediction list pairing each phenotype with its LOCO PGS file.
+
+All input data are downloadable from the [`examples/`](https://github.com/qhengncsu/GRAB-feat-cpp/tree/main/examples) folder of the [GRAB GitHub repository](https://github.com/qhengncsu/GRAB-feat-cpp) (also linked at the top-right of this page).
 
 The prediction list looks like:
 
 ```
-Y1    /path/to/ldak_step1.step1.Y1.loco.prs
-Y2    /path/to/ldak_step1.step1.Y2.loco.prs
+Quantitative1   /path/to/ldak_step1.step1.pheno1.loco.prs
+Quantitative2   /path/to/ldak_step1.step1.pheno2.loco.prs
 ```
 
 The full command:
 
 ```bash
-./grab --method SPAsqr \
-     --bfile geno \
-     --pheno pheno_int.txt --pheno-name Y1,Y2 \
-     --covar covar.txt --covar-name covar1,covar2 \
-     --sp-grm-plink2 geno_sparse.grm.sp \
-     --pred-list grab_predlist.txt \
+./grab2 --method SPAsqr \
+     --bfile 1kg \
+     --pheno 1kg_int.txt --pheno-name Quantitative1,Quantitative2 \
+     --covar 1kg.pheno   --covar-name MALE,PC1,PC2,PC3,PC4 \
+     --sp-grm-plink2 1kg.grm.sp \
+     --pred-list ldak_pred_list.txt \
      --spasqr-h-scale 3 \
      --spasqr-taus 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9 \
      --pheno-transform int \
@@ -65,8 +65,8 @@ The full command:
 This produces
 
 ```
-spasqr_results.Y1.SPAsqr
-spasqr_results.Y2.SPAsqr
+spasqr_results.Quantitative1.SPAsqr
+spasqr_results.Quantitative2.SPAsqr
 ```
 
 each with the schema described in [Output format](#output-format).
@@ -87,7 +87,7 @@ each with the schema described in [Output format](#output-format).
 | Flag | Default | Purpose |
 | ---- | ------- | ------- |
 | `--pheno-name` | (all) | Comma-separated list of trait columns to test. Omitting tests every Y column. |
-| `--covar` + `--covar-name` | — | Covariate file + columns. An intercept is added automatically. |
+| `--covar` + `--covar-name` | — | Covariate file + columns. May point to the same file as `--pheno`; GRAB pulls disjoint columns. An intercept is added automatically. |
 | `--pred-list` | — | LOCO PGS file pairing. See [Workflow 1]({{ site.baseurl }}/docs/workflow-1.html). |
 | `--sp-grm-plink2` | — | Sparse GRM (`.grm.sp`). See [Workflow 2]({{ site.baseurl }}/docs/workflow-2.html). |
 | `--spasqr-taus` | `0.1,0.3,0.5,0.7,0.9` | Quantile grid. Max 20 values. |
@@ -102,7 +102,7 @@ each with the schema described in [Output format](#output-format).
 | `--extract` / `--exclude` | — | SNP include / exclude lists. |
 | `--keep` / `--remove` | — | Subject include / exclude lists. |
 
-Run `grab --help SPAsqr` for the full reference.
+Run `grab2 --help SPAsqr` for the full reference.
 
 ---
 
@@ -118,7 +118,7 @@ fitting the null SQR model:
 - `standardize` — centre and scale to unit variance.
 
 Because the transform is applied internally, **you may pass either the
-raw `pheno.txt` or the pre-INT'd `pheno_int.txt`** as the
+raw `1kg.pheno` or the pre-INT'd `1kg_int.txt`** as the
 `--pheno` input — INT of an already-INT'd column reproduces the same
 column (ranks are preserved), so the two are equivalent under
 `--pheno-transform int`.
@@ -128,14 +128,14 @@ that the offset and the response live on the same scale:
 
 | If the LOCO PGS was trained on … | … pass to SPA<sub>SQR</sub> |
 | -------------------------------- | ---------------- |
-| INT-transformed $Y$ (`pheno_int.txt`) | `--pheno-transform int` |
-| Raw $Y$ (`pheno.txt`)                 | `--pheno-transform standardize` — LDAK-KVIK / REGENIE internally standardize. |
+| INT-transformed $Y$ (`1kg_int.txt`)   | `--pheno-transform int` |
+| Raw $Y$ (`1kg.pheno`)                 | `--pheno-transform standardize` — LDAK-KVIK / REGENIE internally standardize. |
 | Pre-standardized $Y$                  | `--pheno-transform standardize` |
 
 We recommend the **INT path** documented in
 [Workflow 1]({{ site.baseurl }}/docs/workflow-1.html): pre-INT with
-`grab --int-pheno`, feed `pheno_int.txt` to LDAK-KVIK, and leave
-`--pheno-transform` at its default.
+`grab2 --int-pheno`, feed `1kg_int.txt` to LDAK-KVIK or REGENIE, and
+leave `--pheno-transform` at its default.
 
 ---
 
@@ -176,8 +176,8 @@ For a quick test run on a single chromosome, add `--chr 22`.
 GRAB writes one tab-delimited file per phenotype:
 
 ```
-spasqr_results.Y1.SPAsqr
-spasqr_results.Y2.SPAsqr
+spasqr_results.Quantitative1.SPAsqr
+spasqr_results.Quantitative2.SPAsqr
 ```
 
 **Score mode** (default): one row per variant, with per-$\tau$
@@ -209,8 +209,9 @@ against `POS`. For tau-specific follow-up at a hit, inspect
 mean-only effect, while non-monotone or U-shaped patterns suggest
 heteroskedastic or dispersion effects.
 
-**Wald mode** (`--spasqr-mode wald`): one row per (variant, $\tau$),
-with $\hat\beta_G$ and SE instead of $p$-values only. See
+**Wald mode** (`--spasqr-mode wald`): one row per variant, with
+$\hat\beta_G$, SE, $Z$, and $p$-value at each requested $\tau$ as a
+**wide** layout (four columns per $\tau$). See
 [Effect-size estimation]({{ site.baseurl }}/docs/effect-size-estimation.html).
 
 ---

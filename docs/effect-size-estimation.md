@@ -2,7 +2,7 @@
 layout: default
 title: Effect-size estimation
 nav_order: 6
-description: "Per-marker per-tau β̂_G and SE via SPAsqr Wald mode."
+description: "Per-marker, per-tau β̂_G and SE via SPAsqr Wald mode."
 has_children: false
 ---
 
@@ -49,87 +49,82 @@ once **per (marker, $\tau$)** by smoothed M-estimation, and returns
 
 ## Example
 
-Restrict to a set of GWAS hits (one ID per line in `hits.txt`) and
-re-run in Wald mode:
+Restrict to a set of GWAS hits (one ID per line in `spasqr_wald_extract`) and re-run in Wald mode. The GRAB source distribution ships an 8-variant demonstration list at [`examples/spasqr_wald_extract`](https://github.com/qhengncsu/GRAB-feat-cpp/tree/main/examples) that can be copied into the working directory:
+
+```
+$ cat spasqr_wald_extract
+rs558604819
+rs575272151
+rs544419019
+rs561109771
+rs540538026
+rs62635286
+rs200579949
+rs531730856
+```
+
+The Wald-mode call mirrors the score-mode invocation from [Workflow 1]({{ site.baseurl }}/docs/workflow-1.html), with `--spasqr-mode wald` and `--extract` added:
 
 ```bash
-./grab --method SPAsqr \
-     --spasqr-mode wald \
-     --bfile geno \
-     --pheno pheno_int.txt --pheno-name Y1 \
-     --covar covar.txt --covar-name covar1,covar2 \
-     --pred-list grab_predlist.txt \
+./grab2 --method SPAsqr --spasqr-mode wald \
+     --bfile 1kg \
+     --pheno 1kg_int.txt --pheno-name Quantitative1,Quantitative2 \
+     --covar 1kg.pheno   --covar-name MALE,PC1,PC2,PC3,PC4 \
+     --pred-list ldak_pred_list.txt \
+     --extract spasqr_wald_extract \
      --spasqr-taus 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9 \
-     --extract hits.txt \
-     --spasqr-h-scale 10 \
+     --pheno-transform int \
      --threads 8 \
-     --out spasqr_wald
+     --out spasqr_effect
 ```
 
-This produces `spasqr_wald.Y1.SPAsqr` with one row per
-(marker, $\tau$):
+This produces one tab-delimited file per phenotype:
 
 ```
-CHROM  POS  ID  REF  ALT  MISS_RATE  ALT_FREQ  MAC  HWE_P  TAU  BETA  SE  Z  P
+spasqr_effect.Quantitative1.SPAsqr
+spasqr_effect.Quantitative2.SPAsqr
 ```
 
-Column meanings:
+The Wald output shares the score-mode **wide** layout, with one row per variant and four columns per $\tau$ (`P_tau<val>`, `Z_tau<val>`, `BETA_tau<val>`, `SE_tau<val>`):
 
-- `CHROM POS ID REF ALT MISS_RATE ALT_FREQ MAC HWE_P` — same as score
-  mode.
-- `TAU` — the quantile level for this row.
-- `BETA` — Wald estimate $\hat\beta_{G,\tau}$ on the
-  pheno-transform scale (e.g. INT scale if
-  `--pheno-transform int`).
-- `SE` — sandwich-variance standard error.
-- `Z` — Wald statistic $\hat\beta_{G,\tau} / \widehat{\mathrm{SE}}$.
-- `P` — two-sided $p$-value, $P = 2 \cdot \Phi(-|Z|)$.
+```
+CHROM  POS  ID  REF  ALT  MISS_RATE  ALT_FREQ  MAC  HWE_P  P_CCT
+P_tau0.1    ...  P_tau0.9
+Z_tau0.1    ...  Z_tau0.9
+BETA_tau0.1 ...  BETA_tau0.9
+SE_tau0.1   ...  SE_tau0.9
+```
+
+Field meanings (suffix `<val>` is one of the requested `--spasqr-taus` values):
+
+- `CHROM POS ID REF ALT MISS_RATE ALT_FREQ MAC HWE_P` — same as score mode.
+- `P_CCT` — Cauchy-combined $p$-value across $\tau$.
+- `BETA_tau<val>` — Wald estimate $\hat\beta_{G,\tau}$ on the pheno-transform scale (e.g. INT scale if `--pheno-transform int`).
+- `SE_tau<val>` — sandwich-variance standard error.
+- `Z_tau<val>` — Wald statistic $\hat\beta_{G,\tau} / \widehat{\mathrm{SE}}$.
+- `P_tau<val>` — two-sided $p$-value, $P = 2 \cdot \Phi(-|Z|)$.
 
 ## Interpreting per-quantile effects
 
-For a single hit, you typically have 5–9 rows (one per $\tau$). The
-**effect-quantile curve** $\tau \mapsto \hat\beta_{G,\tau}$ tells you
-where in the conditional distribution of $Y$ the variant acts:
+For a single hit, you typically have 5–9 columns per metric (one per $\tau$). The **effect-quantile curve** $\tau \mapsto \hat\beta_{G,\tau}$ tells you where in the conditional distribution of $Y$ the variant acts:
 
-- **Flat curve** — mean-only effect; classical OLS / linear GWAS
-  would have caught it. SPA<sub>SQR</sub> still gives the same hit
-  with slightly conservative SE.
-- **Monotone in $\tau$** — location-scale effect; the variant shifts
-  both the centre and the tails.
-- **U-shaped or non-monotone** — heteroskedastic / dispersion effect;
-  the variant changes the *spread* of $Y$ without shifting the
-  centre. These are the hits where SPA<sub>SQR</sub> typically beats
-  classical mean-based GWAS.
+- **Flat curve** — mean-only effect; classical OLS / linear GWAS would have caught it. SPA<sub>SQR</sub> still gives the same hit with slightly conservative SE.
+- **Monotone in $\tau$** — location-scale effect; the variant shifts both the centre and the tails.
+- **U-shaped or non-monotone** — heteroskedastic / dispersion effect; the variant changes the *spread* of $Y$ without shifting the centre. These are the hits where SPA<sub>SQR</sub> typically beats classical mean-based GWAS.
 
-Plot $\hat\beta_{G,\tau}$ against $\tau$ with $\pm 1.96 \cdot$ SE
-error bars; cross-check the sign pattern against the per-$\tau$
-$Z$-scores from score mode.
+Plot `BETA_tau<val>` against $\tau$ with a $\pm 1.96 \cdot$ `SE_tau<val>` band; cross-check the sign pattern against the per-$\tau$ $Z$-scores from score mode.
 
 ## Bandwidth and solver notes
 
-- Wald mode defaults to `--spasqr-h-scale 10` (narrower bandwidth than
-  score mode's 3). This reduces smoothing bias in $\hat\beta_G$ at the
-  cost of slower convergence; it is the right default when you care
-  about the *estimate*, not just the test.
-- The same `--spasqr-solver` choice applies (`qmme` default,
-  `conquer` as alternative). `qmme` is the recommended solver for both
-  modes.
-- `--spasqr-tol` controls convergence tolerance for the M-estimation
-  iterations. The default `1e-7` is usually fine; tighten to `1e-9`
-  for very rare variants or extreme tail $\tau$.
+- Wald mode defaults to `--spasqr-h-scale 10` (narrower bandwidth than score mode's `3`). This reduces smoothing bias in $\hat\beta_G$ at the cost of slower convergence; it is the right default when you care about the *estimate*, not just the test.
+- The same `--spasqr-solver` choice applies (`qmme` default, `conquer` as alternative). `qmme` is the recommended solver for both modes.
+- `--spasqr-tol` controls convergence tolerance for the M-estimation iterations. The default `1e-7` is usually fine; tighten to `1e-9` for very rare variants or extreme tail $\tau$.
 
 ## When NOT to use Wald mode
 
-- For **genome-wide screening**, always use score mode first. Score
-  mode's $P_\mathrm{CCT}$ is the calibrated GWAS $p$-value; Wald
-  per-$\tau$ Z-scores are not multiplicity-adjusted.
-- For **rare-variant testing** at extreme $\tau$ (e.g. $\tau \in
-  \{0.05, 0.95\}$) with sparse data, Wald sandwich SEs can be
-  unstable. Use score mode instead, which leverages SPA in the tails.
+- For **genome-wide screening**, always use score mode first. Score mode's $P_\mathrm{CCT}$ is the calibrated GWAS $p$-value; Wald per-$\tau$ Z-scores are not multiplicity-adjusted.
+- For **rare-variant testing** at extreme $\tau$ (e.g. $\tau \in \{0.05, 0.95\}$) with sparse data, Wald sandwich SEs can be unstable. Use score mode instead, which leverages SPA in the tails.
 
 > **Note**
-> - Wald mode honors the same `--pred-list`, `--sp-grm-plink2`,
->   `--pheno-transform` and `--spasqr-taus` flags as score mode.
-> - The output schema differs: Wald is **one row per (marker, $\tau$)**
->   with `TAU BETA SE Z P` columns; score is **one row per marker**
->   with `P_CCT P_tau{val}... Z_tau{val}...` columns.
+> - Wald mode honors the same `--pred-list`, `--sp-grm-plink2`, `--pheno-transform` and `--spasqr-taus` flags as score mode.
+> - The output schema differs: Wald is **wide** with `BETA_tau<val>`, `SE_tau<val>`, `Z_tau<val>`, `P_tau<val>` columns; score has only `P_tau<val>`, `Z_tau<val>`.
