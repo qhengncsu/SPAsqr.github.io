@@ -85,13 +85,13 @@ ldak_step1.step1.pheno1.loco.prs        (LOCO PGS for Quantitative1)
 ldak_step1.step1.pheno2.loco.prs        (LOCO PGS for Quantitative2)
 ```
 
-Within each LOCO PGS file, every row is one subject's LOCO PGS across the 22 autosomes:
+Within each LOCO PGS file, every row is one subject's LOCO PGS across the autosomes covered by the genotype file:
 
 ```
 $ head -3 ldak_step1.step1.pheno1.loco.prs
-FID  IID      Chr1     Chr2     Chr3   ...   Chr22
-0    HG00096  0.124   -0.083    0.211         0.196
-0    HG00097 -0.241    0.018   -0.135        -0.057
+FID  IID      Chr1     Chr2     Chr3   ...
+0    HG00096  0.124   -0.083    0.211   ...
+0    HG00097 -0.241    0.018   -0.135   ...
 ```
 
 Note that LDAK encodes missing values as `NA` (not the PLINK convention of `-9`); convert any `-9` or blank cells in the input table to `NA` before running LDAK.
