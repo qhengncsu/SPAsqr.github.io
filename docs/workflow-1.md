@@ -67,7 +67,7 @@ FID  IID      Quantitative1   Quantitative2
 
 ## Computing the LOCO PGS with LDAK-KVIK
 
-LDAK-KVIK reads the phenotype and covariate files directly, with column selection via `--mpheno` (every trait column of `1kg_int.txt`) and `--covar-names` (the covariate subset within `1kg.pheno`). For instance, we may compute LDAK LOCO PGS for both `Quantitative1` and `Quantitative2` using `MALE`, `PC1`, `PC2`, `PC3`, `PC4` as covariates via:
+Note that LDAK encodes missing values as `NA` (not the PLINK convention of `-9`); convert any `-9` or blank cells in the phenotype or covariates file to `NA` before running LDAK. We may compute LDAK LOCO PGS for both `Quantitative1` and `Quantitative2` using `MALE`, `PC1`, `PC2`, `PC3`, `PC4` as covariates via:
 
 ```bash
 ./ldak6.2.linux \
@@ -85,18 +85,19 @@ ldak_step1.step1.pheno1.loco.prs        (LOCO PGS for Quantitative1)
 ldak_step1.step1.pheno2.loco.prs        (LOCO PGS for Quantitative2)
 ```
 
-Within each LOCO PGS file, every row is one subject's LOCO PGS across the autosomes covered by the genotype file:
+Each row of a LOCO PGS file is one subject's LOCO PGS, with one column per chromosome covered by the genotype file. Our bundled `1kg.{bed,bim,fam}` fixture only contains variants on chromosomes 1, 2, and 3, so the LOCO PGS file written by LDAK has only three chromosome columns:
 
 ```
 $ head -3 ldak_step1.step1.pheno1.loco.prs
-FID  IID      Chr1     Chr2     Chr3   ...
-0    HG00096  0.124   -0.083    0.211   ...
-0    HG00097 -0.241    0.018   -0.135   ...
+FID IID Chr1 Chr2 Chr3
+0 HG00096 0 0 0
+0 HG00097 0 0 0
 ```
 
-Note that LDAK encodes missing values as `NA` (not the PLINK convention of `-9`); convert any `-9` or blank cells in the input table to `NA` before running LDAK.
+(LDAK estimates a near-zero heritability on this small fixture and consequently writes all-zero LOCO predictions; on real biobank data with all 22 autosomes the columns hold non-trivial per-subject LOCO PGS values across `Chr1 ... Chr22`.)
 
-Unlike REGENIE, LDAK-KVIK does not emit a prediction list pairing each phenotype with its LOCO PGS file. We assemble one manually in the format expected by `grab2 --pred-list`:
+
+For GRAB to be able to utilize the computed LOCO PGS of LDAK-KVIK, we must manually assemble a prediction list:
 
 ```bash
 cat > ldak_pred_list.txt <<EOF
@@ -105,12 +106,12 @@ Quantitative2   $(pwd)/ldak_step1.step1.pheno2.loco.prs
 EOF
 ```
 
-`$(pwd)` expands to the current working directory so each entry ends up as an absolute path.
+`$(pwd)` expands to the current working directory so here each entry ends up as an absolute path. The path of `ldak_pred_list.txt` will subsequently be passed to `grab2 --pred-list`.
 
 
 ## Computing the LOCO PGS with REGENIE
 
-REGENIE likewise reads the phenotype and covariate files directly, with column selection via `--phenoColList` and `--covarColList`:
+We may compute LOCO PGS via REGENIE:
 
 ```bash
 ./regenie \
