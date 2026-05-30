@@ -131,14 +131,18 @@ regenie_step1_2.loco          (LOCO PGS for Quantitative2)
 regenie_step1_pred.list       (pairs Quantitative1 / Quantitative2 with their .loco files)
 ```
 
-REGENIE's `.loco` format is the **transpose** of LDAK-KVIK's: each row is one chromosome and each column is one subject (with FID and IID joined into a single `FID_IID` token):
+REGENIE's `.loco` format is the **transpose** of LDAK-KVIK's: each row is one chromosome and each column is one subject (with FID and IID joined into a single `FID_IID` token). REGENIE always writes 23 chromosome rows (`Chr1` through `Chr22` plus `ChrX`): for chromosomes that have variants in the genotype, the row holds a genuine leave-one-out prediction; for chromosomes with no variants, the row is filled with the full-data prediction (built from all available variants) as a placeholder. The bundled `1kg.{bed,bim,fam}` fixture contains variants only on chromosomes 1, 2, and 3, so rows 1–3 are distinct real LOCO predictions while rows 4–23 are byte-identical full-data placeholders:
 
 ```
-$ head -3 regenie_step1_1.loco
-FID_IID    0_HG00096    0_HG00097    0_HG00099   ...
-1          0.0497      -0.0624      -0.0156
-2          0.0502      -0.0558      -0.0152
+$ head -5 regenie_step1_1.loco
+FID_IID 0_HG00096 0_HG00097 0_HG00099 0_HG00100 ...
+1 -0.102984 0.0144366 0.0750442 0.23189 ...
+2 -0.105204 0.0682723 0.03053 0.11098 ...
+3 -0.0636062 -0.112115 -0.095117 -0.0697711 ...
+4 -0.135897 -0.0147033 0.0052286 0.136549 ...
 ```
+
+GRAB's per-chromosome LOCO loop only consults the row for the chromosome it is currently scanning, so the placeholder rows are harmless — but they can be confusing when reading the raw file.
 
 GRAB auto-detects the format from each LOCO file's header and distinguishes whether the file is LDAK-KVIK or REGENIE; LDAK-style and REGENIE-style entries can even be mixed within a single pred-list.
 
