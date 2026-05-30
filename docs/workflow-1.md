@@ -67,7 +67,7 @@ FID  IID      Quantitative1   Quantitative2
 
 ## Computing the LOCO PGS with LDAK-KVIK
 
-We may compute LDAK LOCO PGS for both `Quantitative1` and `Quantitative2` using `MALE`, `PC1`, `PC2`, `PC3`, `PC4` as covariates via:
+LDAK-KVIK reads the phenotype and covariate files directly, with column selection via `--mpheno` (every trait column of `1kg_int.txt`) and `--covar-names` (the covariate subset within `1kg.pheno`). For instance, we may compute LDAK LOCO PGS for both `Quantitative1` and `Quantitative2` using `MALE`, `PC1`, `PC2`, `PC3`, `PC4` as covariates via:
 
 ```bash
 ./ldak6.2.linux \
@@ -78,23 +78,21 @@ We may compute LDAK LOCO PGS for both `Quantitative1` and `Quantitative2` using 
     --max-threads 8
 ```
 
-This writes one LOCO PGS file per phenotype:
+This writes one LOCO PGS file per phenotype, named by the trait's **position** in the phenotype file rather than its column name:
 
 ```
 ldak_step1.step1.pheno1.loco.prs        (LOCO PGS for Quantitative1)
 ldak_step1.step1.pheno2.loco.prs        (LOCO PGS for Quantitative2)
 ```
 
-Within each LOCO PGS file, every row is one subject's LOCO PGS across all autosomes the genotype file covers (`Chr1`, `Chr2`, …, `Chr22` on production data). The bundled `1kg.{bed,bim,fam}` fixture only covers chromosomes 1, 2, and 3, so the bundled LOCO PGS file has only three chromosome columns:
+Within each LOCO PGS file, every row is one subject's LOCO PGS across the 22 autosomes:
 
 ```
 $ head -3 ldak_step1.step1.pheno1.loco.prs
-FID IID Chr1 Chr2 Chr3
-0 HG00096 0 0 0
-0 HG00097 0 0 0
+FID  IID      Chr1     Chr2     Chr3   ...   Chr22
+0    HG00096  0.124   -0.083    0.211         0.196
+0    HG00097 -0.241    0.018   -0.135        -0.057
 ```
-
-(LDAK estimates a near-zero heritability on this small fixture and consequently writes all-zero LOCO predictions; on real biobank data the columns carry non-trivial per-subject LOCO PGS values.)
 
 Note that LDAK encodes missing values as `NA` (not the PLINK convention of `-9`); convert any `-9` or blank cells in the input table to `NA` before running LDAK.
 
@@ -136,9 +134,9 @@ REGENIE's `.loco` format is the **transpose** of LDAK-KVIK's: each row is one ch
 
 ```
 $ head -3 regenie_step1_1.loco
-FID_IID 0_HG00096 0_HG00097 0_HG00099 ...
-1 -0.102984 0.0144366 0.0750442 ...
-2 -0.105204 0.0682723 0.03053 ...
+FID_IID    0_HG00096    0_HG00097    0_HG00099   ...
+1          0.0497      -0.0624      -0.0156
+2          0.0502      -0.0558      -0.0152
 ```
 
 GRAB auto-detects the format from each LOCO file's header and distinguishes whether the file is LDAK-KVIK or REGENIE; LDAK-style and REGENIE-style entries can even be mixed within a single pred-list.
@@ -214,9 +212,9 @@ Each file lists per-variant statistics including per-quantile $p$-values, the Ca
 
 ```
 $ head -3 spasqr_results.Quantitative1.SPAsqr
-CHROM  POS    ID           REF  ALT  MISS_RATE  ALT_FREQ    MAC  HWE_P  P_CCT     P_tau0.1  P_tau0.3  P_tau0.5  P_tau0.7  P_tau0.9  Z_tau0.1  Z_tau0.3   Z_tau0.5   Z_tau0.7    Z_tau0.9
-1      10642  rs558604819  G    A    0          0.00419329  21   1      0.909797  0.821432  0.913605  0.788593  0.949855  0.929046  0.225704  -0.108493  -0.268138  -0.0628885  -0.0890449
-1      11008  rs575272151  C    G    0          0.0880591   441  1      0.809525  0.619062  0.48465   0.88499   0.6395    0.919602  -0.49718  -0.698844  -0.144646   0.468398   -0.100935
+CHROM  POS      ID          REF  ALT  MISS_RATE   ALT_FREQ  MAC    HWE_P     P_CCT      P_tau0.1  P_tau0.3   P_tau0.5   P_tau0.7    P_tau0.9    Z_tau0.1    Z_tau0.3   Z_tau0.5  Z_tau0.7  Z_tau0.9
+1      1171417  rs6603782   C    T    0.0137558   0.326478  25748  0.536365  0.0071169  0.923124  0.397414   0.0379922  0.00415006  0.00223711  -0.0964998  -0.846248  -2.07494  -2.86651  -3.0567
+1      2236359  rs60363208  G    A    0.00435185  0.173843  13841  0.412157  0.227344   0.273908  0.0829882  0.152614   0.509465    0.70161     1.09411     1.73361    1.43036   0.65967   -0.383148
 ```
 
 The first nine columns are the variant identifier and standard variant-level QC fields. `P_CCT` is the Cauchy-combined $p$-value across all $\tau$ levels and is the main genome-wide significance result. The `P_tauX` and `Z_tauX` columns give the per-quantile $p$-values and $Z$-scores; comparing them across $\tau$ yields insight into the heterogeneity of effect sizes across the phenotype distribution.

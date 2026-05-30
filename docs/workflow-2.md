@@ -54,23 +54,18 @@ The GRM is a concept popularized by the [GCTA](https://yanglab.westlake.edu.cn/s
 - `--maf 0.01` restricts GRM computation to common variants with minor allele frequency $\geq 0.01$.
 - `--make-grm-sparse 0.05` retains genetic correlation coefficients above $0.05$ and zeroes out the rest.
 
-The command produces `1kg.grm.sp` along with the companion `1kg.grm.id`. The `.grm.sp` file is a three-column text file (`i`, `j`, $\Phi_{ij}$):
+The command produces `1kg.grm.sp` along with the companion `1kg.grm.id`. The `.grm.sp` file is a three-column text file:
 
 ```
 $ head 1kg.grm.sp
-0	0	0.65971415
-1	0	0.064281474
-1	1	0.50382732
-2	0	0.064634687
-2	1	0.32203796
-2	2	0.95093186
-3	1	0.13422458
-3	2	0.2433665
-3	3	0.444169
-4	0	0.10572714
+0   0   1.0024
+1   1   0.9981
+2   2   1.0107
+3   0   0.5012      # half-sibling of subject 0
+4   3   0.2503      # first cousin of subject 3
 ```
 
-Sample $i$, $j$ indices are **0-based** and correspond to the row order in `1kg.grm.id`. Diagonal entries are each subject's self-similarity (≈ 1 in expectation); off-diagonal entries above the `--make-grm-sparse 0.05` cutoff are retained, the rest are zeroed.
+Sample $i$, $j$ indices are **0-based** and correspond to the row order in `1kg.grm.id`.
 
 
 ## SPA<sub>SQR</sub> association testing with GRM-aware variance
