@@ -152,11 +152,6 @@ Quantitative2   /abs/path/to/regenie_step1_2.loco
 ```
 
 
-### Handling of missing chromosomes
-
-LDAK-KVIK and REGENIE differ in how they treat chromosomes absent from the genotype file. **LDAK** writes one column per chromosome actually present: on the bundled chr1–3 fixture the output has only `Chr1 Chr2 Chr3` columns, and a production chr1–22 run gives `Chr1 ... Chr22`. **REGENIE** always writes 23 chromosome rows (chr1–chr22 plus chrX); for chromosomes that have variants in the genotype file, the corresponding row holds a genuine leave-one-chromosome-out prediction (built from the other chromosomes), while for chromosomes that have no variants the row is filled with the **full-data** prediction (built from all available variants) as a placeholder. The bundled chr1–3 fixture therefore produces three "real LOCO" rows (chr1, chr2, chr3) followed by twenty identical "full-data" rows (chr4 through chrX). GRAB's per-chromosome LOCO loop only consults the rows for chromosomes it actually scans, so the placeholder rows are harmless; this difference is mainly a thing to be aware of when reading the raw files.
-
-
 ## Running association testing with GRAB
 
 Once the prediction list is ready, null model fitting (SPA<sub>SQR</sub> step 1) and association testing (SPA<sub>SQR</sub> step 2) are completed in a single `grab2` call:
