@@ -8,10 +8,10 @@ has_children: false
 
 # **Effect-size estimation — `--spasqr-mode wald`**
 
-The default `--spasqr-mode score` is optimized for **genome-wide screening**: it tests $H_0\!: \gamma_\tau = 0$ at every $\tau$ via a rank-score statistic computed from a single null-model fit per chromosome, and returns calibrated $p$-values and signed $Z$-scores per marker — but **not** the per-allele effect estimate $\hat\gamma_\tau$ itself. For follow-up analyses on a small candidate set (top GWAS hits, prior-literature variants), switch to **Wald mode**. Wald mode re-fits the *full* model
+The default `--spasqr-mode score` is optimized for **genome-wide screening**: it tests $H_0: \gamma_\tau = 0$ at every $\tau$ via a rank-score statistic computed from a single null-model fit per chromosome, and returns calibrated $p$-values and signed $Z$-scores per marker — but **not** the per-allele effect estimate $\hat\gamma_\tau$ itself. For follow-up analyses on a small candidate set (top GWAS hits, prior-literature variants), switch to **Wald mode**. Wald mode re-fits the *full* model
 
 $$
-Q_\tau(Y \mid X, G_j) \;=\; X^\top \beta \;+\; G\, \gamma_{\tau}
+Q_\tau(Y \mid X, G) \;=\; X^\top \beta_\tau \;+\; G\, \gamma_{\tau}
 $$
 
 once **per (marker, $\tau$)** and reports $\hat\gamma_{\tau}$, its sandwich-variance standard error, the Wald statistic, and the two-sided $p$-value. Wald mode is meant for a short, curated list of SNPs passed via `--extract`, not for a full genome-wide scan.
