@@ -41,22 +41,22 @@ S00001  S00001  0     0.0065558   -0.0190989  0.00331922   0.00574267  0.4476112
 S00002  S00002  1     0.00947819  -0.0120386  -0.0226929   0.0132888   -1.28469274    0.626376502
 ```
 
-A single file may carry both phenotype and covariate columns (as here), or the two may live in separate files supplied through `--pheno` and `--covar`. GRAB also accepts a single `IID` key column in place of the `FID IID` pair; LDAK-KVIK and REGENIE require the `FID IID` pair. The bundled `simu_geno.*` fixture in this tutorial is a 5000-subject × 5000-variant × 22-autosome dataset simulated via `GRAB::GRAB.SimuGMat` (1250 families of 4 members each), with `Quantitative1` and `Quantitative2` carrying genuine polygenic signal (heritability ≈ 0.30, 500 causal SNPs per trait). All input files are available in the [`data/`](https://github.com/qhengncsu/SPAsqr.github.io/tree/main/data) folder of this documentation repository; download them to replicate this tutorial verbatim.
+A single file may carry both phenotype and covariate columns (as here), or the two may live in separate files supplied through `--pheno` and `--covar`. GRAB also accepts a single `IID` key column in place of the `FID IID` pair; LDAK-KVIK and REGENIE require the `FID IID` pair. The bundled `simu_geno.*` fixture in this tutorial is a simulated 5000-subject × 5000-variant × 22-autosome data set (1250 families of 4 members each), with `Quantitative1` and `Quantitative2` carrying genuine polygenic signal (heritability ≈ 0.30, 500 causal SNPs per trait). All input files are available in the [`data/`](https://github.com/qhengncsu/SPAsqr.github.io/tree/main/data) folder of this documentation repository; download them to replicate this tutorial verbatim.
 
-In what follows, we wish to test the two quantitative traits `Quantitative1` and `Quantitative2`, adjusting for the covariates `MALE`, `PC1`, `PC2`, `PC3`, `PC4`. GRAB automatically adds an intercept to the covariate matrix, so there is no need to include one in the phenotype file. For simplicity, the same `simu_geno.{bed,bim,fam}` fileset is used for both LOCO PGS construction and SPA<sub>SQR</sub> association testing. In practice, the two stages typically use different variant subsets: LOCO PGS is usually trained on directly genotyped (unimputed) variants — a few hundred thousand high-quality SNPs — since imputed variants add measurement noise and slow down training without materially improving the accuracy of the LOCO PGS. Association testing, by contrast, is run on the full imputed dataset (tens of millions of variants, including rare ones) to maximize discovery.
+In what follows, we wish to run QR GWAS for the two quantitative traits `Quantitative1` and `Quantitative2`, adjusting for the covariates `MALE`, `PC1`, `PC2`, `PC3`, `PC4`. GRAB automatically adds an intercept to the covariate matrix, so there is no need to include one in the phenotype file. For simplicity, the same `simu_geno.{bed,bim,fam}` fileset is used for both LOCO PGS construction and SPA<sub>SQR</sub> association testing. In practice, the two stages typically use different variant subsets: LOCO PGS is usually trained on directly genotyped (unimputed) variants — a few hundred thousand high-quality SNPs — since imputed variants add measurement noise and slow down training without materially improving the accuracy of the LOCO PGS. Association testing, by contrast, is run on the full imputed dataset (millions of variants, including rare ones) to maximize discovery.
 
 For GRAB to utilize the LOCO PGS, we also need a small text file called a **prediction list** — a two-column table pairing each phenotype name (column 1) with the absolute path to its LOCO PGS file (column 2). The prediction list is what GRAB reads (via the `--pred-list` argument) so that it knows which PGS file is paired with which trait. This file format mimics the workflow of REGENIE.
 
 
 ## Inverse normal transformation
 
-Before computing the PGS we recommend applying a **rank-based inverse normal transformation (INT)** to each trait's non-missing values, because in real data analysis we find that doing so generally yields more associations than skipping it; this is likely because the LOCO PGS are more accurate when computed on an INT-transformed trait. GRAB offers a utility for applying INT to selected columns of the phenotype file:
+Before computing the PGS we recommend applying a **rank-based inverse normal transformation (INT)** to each trait's non-missing values, because in UK Biobank real data analysis we find that doing so generally yields more associations than skipping it; this is likely because the LOCO PGS are more accurate when computed on an INT-transformed trait. GRAB offers a utility for applying INT to selected columns of the phenotype file:
 
 ```bash
 ./grab2 --int-pheno --pheno simu_geno.pheno --pheno-name Quantitative1,Quantitative2 --out simu_geno_int
 ```
 
-The output `simu_geno_int.txt` retains the `FID IID` key columns and replaces each requested trait column with its INT-transformed values; covariates remain in `simu_geno.pheno` and are pulled separately through `--covar` at the analysis stage.
+The output `simu_geno_int.txt` retains the `FID IID` key columns and replaces each requested trait column with its INT-transformed values.
 
 ```
 $ head simu_geno_int.txt
@@ -65,10 +65,9 @@ S00001  S00001  0.40780638     -1.39757115
 S00002  S00002  -1.28887908    0.636848104
 ```
 
-
 ## Computing the LOCO PGS with LDAK-KVIK
 
-Note that LDAK encodes missing values as `NA` (not the PLINK convention of `-9`); convert any `-9` or blank cells in the phenotype or covariates file to `NA` before running LDAK. We may compute LDAK LOCO PGS for both `Quantitative1` and `Quantitative2` using `MALE`, `PC1`, `PC2`, `PC3`, `PC4` as covariates via:
+We may compute LDAK LOCO PGS for both `Quantitative1` and `Quantitative2` using `MALE`, `PC1`, `PC2`, `PC3`, `PC4` as covariates via:
 
 ```bash
 ./ldak6.2.linux \
@@ -86,7 +85,7 @@ ldak_step1.step1.pheno1.loco.prs        (LOCO PGS for Quantitative1)
 ldak_step1.step1.pheno2.loco.prs        (LOCO PGS for Quantitative2)
 ```
 
-Each row of a LOCO PGS file is one subject's LOCO PGS, with one column per chromosome covered by the genotype file (`Chr1`, `Chr2`, …, `Chr22` on production data and on our bundled 22-autosome fixture):
+Each row of a LOCO PGS file is one subject's LOCO PGS, with one column per chromosome:
 
 ```
 $ head -3 ldak_step1.step1.pheno1.loco.prs
@@ -96,7 +95,7 @@ S00002  S00002  -0.3886  -0.4240  -0.3571  -0.4036       -0.4109
 ```
 
 
-For GRAB to be able to utilize the computed LOCO PGS of LDAK-KVIK, we must manually assemble a prediction list:
+As mentioned,for GRAB to be able to properly utilize the LOCO PGS computed by LDAK-KVIK, we must manually assemble a prediction list:
 
 ```bash
 cat > simu_geno_ldak_pred.list <<EOF
@@ -110,10 +109,10 @@ EOF
 
 ## Computing the LOCO PGS with REGENIE
 
-We may compute LOCO PGS via REGENIE:
+Alternatively, we may compute LOCO PGS via REGENIE:
 
 ```bash
-./regenie \
+regenie \
     --step 1 \
     --bed simu_geno \
     --phenoFile simu_geno_int.txt --phenoColList Quantitative1,Quantitative2 \
@@ -130,7 +129,7 @@ simu_geno_regenie_2.loco          (LOCO PGS for Quantitative2)
 simu_geno_regenie_pred.list       (pairs Quantitative1 / Quantitative2 with their .loco files)
 ```
 
-REGENIE's `.loco` format is the **transpose** of LDAK-KVIK's: each row is one chromosome and each column is one subject (with FID and IID joined into a single `FID_IID` token). REGENIE writes 22 (or 23 if `ChrX` is present in the genotype) chromosome rows; each row holds the genuine leave-one-out prediction for the corresponding chromosome:
+REGENIE's `.loco` format is the **transpose** of LDAK-KVIK's: each row is one chromosome and each column is one subject (with FID and IID joined into a single `FID_IID` token). REGENIE writes 22 (or 23 if `ChrX` is present in the genotype) chromosome rows; each row holds the leave-one-chromosome-out PGS for the corresponding chromosome:
 
 ```
 $ head -5 simu_geno_regenie_1.loco
@@ -141,8 +140,7 @@ FID_IID  S00001_S00001  S00002_S00002  S00003_S00003  S00004_S00004  ...
 4        -0.0156        -0.2151        -0.0762        -0.2677        ...
 ```
 
-GRAB auto-detects the format from each LOCO file's header and distinguishes whether the file is LDAK-KVIK or REGENIE; LDAK-style and REGENIE-style entries can even be mixed within a single pred-list.
-
+GRAB auto-detects the format from each LOCO file's header and distinguishes whether the LOCO OGS file is produced by LDAK-KVIK or REGENIE.
 Unlike LDAK-KVIK, REGENIE produces `simu_geno_regenie_pred.list` automatically, in the exact format `grab2 --pred-list` expects:
 
 ```
@@ -150,7 +148,7 @@ $ cat simu_geno_regenie_pred.list
 Quantitative1   /abs/path/to/simu_geno_regenie_1.loco
 Quantitative2   /abs/path/to/simu_geno_regenie_2.loco
 ```
-
+so that we no longer need to manually create such a prediction list file. 
 
 ## Running association testing with GRAB
 
@@ -186,7 +184,7 @@ Pass either the manually-assembled `simu_geno_ldak_pred.list` (LDAK-KVIK) or the
 | `--pred-list` | — | Prediction list (e.g. `simu_geno_ldak_pred.list` for LDAK-KVIK or `simu_geno_regenie_pred.list` for REGENIE). Omit to run with no LOCO offset — valid but much less powerful. |
 | `--pheno-transform` | `int` | One of `int` / `standardize`. **Must match the transform used during PGS construction.** With `simu_geno_int.txt` and the INT workflow, leave it at the default. With raw `simu_geno.pheno` fed to LDAK-KVIK or REGENIE, set this to `standardize`. |
 | `--pheno-name` | all trait columns | Comma-separated list of trait columns to analyze (e.g. `Quantitative1,Quantitative2`). |
-| `--covar` + `--covar-name` | — | Covariate file + comma-separated list of covariate columns (e.g. `MALE,PC1,PC2,PC3,PC4`). May point to the same file as `--pheno`; GRAB pulls disjoint columns. |
+| `--covar` + `--covar-name` | — | Covariate file + comma-separated list of covariate columns (e.g. `MALE,PC1,PC2,PC3,PC4`). May point to the same file as `--pheno`. |
 | `--spasqr-taus` | `0.1,0.3,0.5,0.7,0.9` | Quantile levels at which to test, comma-separated (max 20 levels). |
 | `--spasqr-h-scale` | `3` (score mode) | Bandwidth divisor: $h = \mathrm{IQR}(\tilde Y - \hat Y_{-c}) / \text{scale}$. Larger value → less smoothing. |
 | `--threads` | `1` | Number of threads used for parallel computing (e.g. `8`). |

@@ -8,7 +8,7 @@ has_children: false
 
 # **Workflow 2: LOCO PGS + GRM + SPA<sub>SQR</sub>**
 
-When the study cohort has a relatively high degree of relatedness, incorporating the LOCO PGS as an offset alone does not ensure test calibration. More specifically, REGENIE LOCO PGS is typically less predictive of the phenotype than LDAK-KVIK LOCO PGS: using REGENIE LOCO PGS as an offset falls short of completely eliminating type-I error inflation due to relatedness, while using LDAK-KVIK LOCO PGS may result in deflated test statistics.
+When the study cohort has a relatively high degree of relatedness, incorporating the LOCO PGS as an offset alone does not ensure test calibration. More specifically, REGENIE LOCO PGS is typically less predictive of the phenotype than LDAK-KVIK LOCO PGS: using REGENIE LOCO PGS as an offset may fall short of completely eliminating type-I error inflation due to relatedness, while using LDAK-KVIK LOCO PGS may result in deflated test statistics.
 
 SPA<sub>SQR</sub> calibrates the score variance with a **sparse genetic relationship matrix (GRM)** $\Phi \in \mathbb{R}^{n \times n}$, whose entries measure pairwise genetic similarity between subjects:
 
@@ -159,4 +159,4 @@ REGENIE LOCO PGS + sparse GRM, with INT:
 
 ## When to skip the sparse GRM
 
-The sparse GRM is purely a variance-calibration device: omitting it does not bias the score statistic itself, only its reference distribution. It can be omitted when the study cohort has an objectively low degree of relatedness, in which case $R^{\top}\, R \approx R^{\top}\,\Phi\, R$ and the GWAS results are mostly similar. Additionally, it is well-known that the GRM can be highly inaccurate when computed from genotypes spanning multiple ancestries; we therefore also advise against using this feature for multi-ancestry data.
+The sparse GRM is purely a variance-calibration device: omitting it does not change the score statistic itself, only its reference distribution. It can be omitted when the study cohort has an objectively low degree of relatedness, in which case $R^{\top}\, R \approx R^{\top}\,\Phi\, R$ and the GWAS results will be mostly similar. Additionally, it is well-known that the GRM can be highly inaccurate when computed from genotypes spanning multiple ancestries; we therefore also advise against using this feature for multi-ancestry data.
