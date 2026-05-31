@@ -14,7 +14,7 @@ When the trait list is long (dozens to hundreds of phenotypes), running one trai
 
 - **Memory.** An all-trait LDAK or SPA<sub>SQR</sub> process keeps every trait's working buffers in RAM at the same time, and peak memory scales roughly with the number of traits — on a biobank with hundreds of phenotypes this can easily run a node out of RAM. A per-trait process only holds one trait's information, so total memory is capped at `MAX_PARALLEL × per-trait-memory`, which you control directly.
 - **Debugging and restart.** When one trait in a hundred fails to complete the analysis due to an error, an all-trait run forces you to figure out which trait broke and re-run the whole thing. Per-trait runs put every failure in its own log file (`log.spasqr.${trait}`) and let you debug and restart just that one trait.
-- **Speed.** Within a single LDAK or SPA<sub>SQR</sub> process, splitting work across $T$ threads doesn't give you a clean $T$× speedup. Running $N$ single-threaded processes in parallel typically *beats* one $N$-trait multi-threaded run in speed, since there is no internal threading overhead.
+- **Speed.** Within a single LDAK or SPA<sub>SQR</sub> process, using $N$ threads via `---max-threads N` or `---threads N` doesn't give you a clean $N$× speedup. Running $N$ single-threaded processes in parallel typically *beats* one $N$-trait $N$-threaded run in speed, since there is no internal threading overhead.
 
 This page gives a tutorial on how to run LDAK-KVIK and SPA<sub>SQR</sub> one trait at a time. The recipe below uses the same `simu_geno` file sets and phenotypes as the previous workflows.
 
