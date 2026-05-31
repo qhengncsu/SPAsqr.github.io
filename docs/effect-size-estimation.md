@@ -14,7 +14,7 @@ $$
 Q_\tau(Y \mid X, G_j) \;=\; X^\top \beta \;+\; G_j\, \gamma_{j,\tau}
 $$
 
-once **per (marker, $\tau$)** by smoothed M-estimation, and reports $\hat\gamma_{j,\tau}$, its sandwich-variance standard error, the Wald statistic, and the two-sided $p$-value. Total cost scales as $\mathcal O(\text{n\_markers} \times \text{n\_taus})$ — roughly 9× score mode at 9 $\tau$ levels — so Wald mode is intended for a candidate list of at most a few hundred variants restricted via `--extract`, not for a full genome-wide scan.
+once **per (marker, $\tau$)** by smoothed M-estimation, and reports $\hat\gamma_{j,\tau}$, its sandwich-variance standard error, the Wald statistic, and the two-sided $p$-value. Wald mode is intended for short curated list of SNPs specified via `--extract`, not for a full genome-wide scan.
 
 ## Example
 
@@ -63,12 +63,5 @@ For each requested $\tau$:
 - `SE_tau<val>` — the sandwich-variance standard error.
 - `Z_tau<val>` and `P_tau<val>` — the Wald statistic $\hat\gamma_\tau / \widehat{\mathrm{SE}}$ and the two-sided normal $p$-value.
 
-## Interpreting per-quantile effects
-
-Plotting $\hat\gamma_\tau$ against $\tau$ with a $\pm 1.96 \cdot \widehat{\mathrm{SE}}$ band visualizes whether the genetic effect varies across quantiles of the phenotype distribution:
-
-- **Flat curve** — mean-only effect; classical OLS / linear GWAS would have caught it.
-- **Monotone in $\tau$** — location-scale effect; the variant shifts both the centre and the tails.
-- **U-shaped or non-monotone** — heteroskedastic / dispersion effect, where SPA<sub>SQR</sub> typically beats classical mean-based GWAS.
 
 Wald mode defaults to a narrower bandwidth than score mode (`--spasqr-h-scale 10` vs `3`) to keep smoothing bias on $\hat\gamma_\tau$ low at the cost of slightly slower convergence; override via `--spasqr-h-scale <k>` when warranted.
