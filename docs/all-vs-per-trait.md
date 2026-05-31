@@ -12,11 +12,11 @@ has_children: false
 
 When the trait list is long (dozens to hundreds of phenotypes), running one trait per process is the more practical pattern, for three reasons:
 
-- **Memory.** An all-trait LDAK or SPA<sub>SQR</sub> process keeps every trait's design matrix and working buffers in RAM at the same time, and peak memory scales roughly with the number of traits — on a biobank with hundreds of phenotypes this can run a node out of RAM. A per-trait process only holds one trait's working set, so total memory is capped at `MAX_PARALLEL × per-trait-memory`, which you control directly.
+- **Memory.** An all-trait LDAK or SPA<sub>SQR</sub> process keeps every trait's working buffers in RAM at the same time, and peak memory scales roughly with the number of traits — on a biobank with hundreds of phenotypes this can run a node out of RAM. A per-trait process only holds one trait's working set, so total memory is capped at `MAX_PARALLEL × per-trait-memory`, which you control directly.
 - **Debugging and restart.** When one trait in a hundred fails to converge or hits a numerical edge case, an all-trait run forces you to figure out which trait broke and re-run the whole batch. Per-trait runs put every failure in its own log file (`log.spasqr.${trait}`) and let you restart just that one trait.
-- **Speed.** Within a single LDAK or SPA<sub>SQR</sub> process, splitting work across traits doesn't give you a clean $N$× speedup. Running $N$ single-threaded processes in parallel typically *beats* one $N$-trait multi-threaded run, because the OS schedules them across the node's cores without the internal-threading overhead.
+- **Speed.** Within a single LDAK or SPA<sub>SQR</sub> process, splitting work across traits doesn't give you a clean $N$× speedup. Running $N$ single-threaded processes in parallel typically *beats* one $N$-trait multi-threaded run in speed.
 
-This page documents that pattern for LDAK-KVIK + SPA<sub>SQR</sub>. REGENIE Step 1 is the one exception — it handles a multi-trait `--phenoColList` very efficiently in one invocation and should be run all-at-once; only the downstream SPA<sub>SQR</sub> stage benefits from per-trait fan-out. The recipe below uses the same `simu_geno` tutorial fixture, with `Quantitative1` and `Quantitative2` playing the role of a real trait list of length $N$.
+This page gives a tutorial on how to run LDAK-KVIK and SPA<sub>SQR</sub> one trait at a time. The recipe below uses the same `simu_geno` file sets and phenotypes as the previous workflows.
 
 ## Shared preparatory steps
 
@@ -34,7 +34,7 @@ These two are run once and reused across every trait:
 
 ## Per-trait runner scripts
 
-`run_ldak_step1.sh` — fit the LDAK Step 1 null model for one trait, single-threaded:
+`run_ldak_step1.sh` runs LDAK-KVIK Step 1 for one trait, single-threaded:
 
 ```bash
 #!/usr/bin/env bash
@@ -96,6 +96,8 @@ done
 wait
 ```
 
-The two phases run sequentially because Phase 2 consumes the `.loco.prs` files produced by Phase 1. Within each phase every trait runs independently, so on an $n$-core node with $N$ traits and per-trait wall time $T$, the all-phase wall time is approximately $T \cdot \lceil N / n \rceil$ — linear in the trait count and inversely linear in the core count, with no internal-threading overhead to dilute it.
+The line `(( $(jobs -r | wc -l) >= MAX_PARALLEL )) && wait -n` is a `bash` semaphore. `jobs -r` lists currently *running* background jobs in this shell, `wc -l` counts them, and the `(( ... ))` test compares that count against `MAX_PARALLEL`. If the cap has been reached, `wait -n` blocks the `for` loop until **any one** background job finishes, freeing a slot for the next iteration to launch a new trait into. The trailing `wait` after the loop then drains the remaining jobs before the phase ends. The net effect is that no more than `MAX_PARALLEL` per-trait processes are alive at any moment — pure bash, no GNU parallel, no `xargs -P`, no external scheduler.
+
+The two phases run sequentially because Phase 2 needs the `.loco.prs` files produced by Phase 1. Within each phase, every trait runs as its own **single-threaded process**, and the **operating system scheduler** spreads those processes across the node's CPU cores. This is the key difference from the all-traits-at-once style: parallelism comes from the OS scheduling $N$ independent processes on different cores, not from multi-threading inside one big LDAK or SPA<sub>SQR</sub> call. On an $n$-core node with $N$ traits and per-trait wall time $T$, the per-phase wall time is approximately $T \cdot \lceil N / n \rceil$ — linear in the trait count, inversely linear in the core count, with no internal-threading overhead to dilute it.
 
 The same per-trait runner scripts drop straight into a SLURM array job (`#SBATCH --array=1-${N}`, with trait $i$ pulled from a manifest file) when you want to scale beyond a single node; the only thing the cluster scheduler replaces is the bash master launcher itself.
