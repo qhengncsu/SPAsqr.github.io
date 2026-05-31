@@ -8,7 +8,7 @@ has_children: false
 
 # **All traits at once vs one trait at a time**
 
-[Workflow 1]({{ site.baseurl }}/docs/workflow-1.html) and [Workflow 2]({{ site.baseurl }}/docs/workflow-2.html) batch every trait of interest into a single LDAK / REGENIE / GRAB invocation — `--mpheno ALL`, `--phenoColList Quantitative1,Quantitative2`, `--pheno-name Quantitative1,Quantitative2`. This **all-traits-at-once** style is the simplest possible recipe and is what we show in the tutorial. It is also the right choice when you are running just a handful of phenotypes and never expect to come back to debug an individual one.
+[Workflow 1]({{ site.baseurl }}/docs/workflow-1.html) and [Workflow 2]({{ site.baseurl }}/docs/workflow-2.html) batch every trait of interest into a single LDAK / REGENIE / GRAB call — `--mpheno ALL`, `--phenoColList Quantitative1,Quantitative2`, `--pheno-name Quantitative1,Quantitative2`. This **all-traits-at-once** style is the simplest possible recipe and is what we first show in the tutorial. It is also the right choice when you are running just a handful of phenotypes.
 
 For any analysis at meaningful scale, however, the **one-trait-at-a-time** decomposition — one single-threaded process per trait, $N$ processes fanned out across the node by a thin `bash` master launcher — is the more practical pattern, for three reasons that compound:
 
