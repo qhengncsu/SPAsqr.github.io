@@ -17,7 +17,7 @@ GRAB is self-contained — all third-party libraries are bundled in the source t
 ```bash
 git clone --depth=1 https://github.com/GeneticAnalysisinBiobanks/GRAB.git
 cd GRAB
-make -j$(nproc)              # macOS: make -j$(sysctl -n hw.ncpu)
+make -j
 build/grab2 --version
 ```
 
