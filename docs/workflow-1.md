@@ -26,9 +26,10 @@ Throughout this page we assume a working directory containing the genotype file 
 ```
 simu_geno.{bed,bim,fam}    PLINK 1 genotype fileset
 simu_geno.pheno            phenotype + covariate columns
-grab2                GRAB binary
-ldak6.2.linux        LDAK binary
-regenie              REGENIE binary
+grab2                      GRAB binary
+ldak6.2.linux              LDAK binary
+regenie                    REGENIE binary
+plink2                     PLINK 2 binary (used in Workflow 2 to build the sparse GRM)
 ```
 
 The phenotype file `simu_geno.pheno` is in PLINK format, with `FID`/`IID` in the first two columns and phenotype/covariate data in the remaining columns:
