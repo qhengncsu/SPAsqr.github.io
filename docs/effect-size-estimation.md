@@ -49,29 +49,29 @@ once **per (marker, $\tau$)** by smoothed M-estimation, and returns
 
 ## Example
 
-Restrict to a set of GWAS hits (one ID per line in `spasqr_wald_extract`) and re-run in Wald mode. The GRAB source distribution ships an 8-variant demonstration list at [`examples/spasqr_wald_extract`](https://github.com/GeneticAnalysisinBiobanks/GRAB/tree/main/examples) that can be copied into the working directory:
+Restrict to a set of GWAS hits (one ID per line in `simu_geno_wald_extract`) and re-run in Wald mode. This documentation repository ships an 8-variant demonstration list at [`data/simu_geno_wald_extract`](https://github.com/qhengncsu/SPAsqr.github.io/tree/main/data) that can be copied into the working directory:
 
 ```
-$ cat spasqr_wald_extract
-rs558604819
-rs575272151
-rs544419019
-rs561109771
-rs540538026
-rs62635286
-rs200579949
-rs531730856
+$ cat simu_geno_wald_extract
+SNP_1031
+SNP_1040
+SNP_1428
+SNP_187
+SNP_2170
+SNP_2287
+SNP_3240
+SNP_4380
 ```
 
 The Wald-mode call mirrors the score-mode invocation from [Workflow 1]({{ site.baseurl }}/docs/workflow-1.html), with `--spasqr-mode wald` and `--extract` added:
 
 ```bash
 ./grab2 --method SPAsqr --spasqr-mode wald \
-     --bfile 1kg \
-     --pheno 1kg_int.txt --pheno-name Quantitative1,Quantitative2 \
-     --covar 1kg.pheno   --covar-name MALE,PC1,PC2,PC3,PC4 \
-     --pred-list ldak_pred_list.txt \
-     --extract spasqr_wald_extract \
+     --bfile simu_geno \
+     --pheno simu_geno_int.txt --pheno-name Quantitative1,Quantitative2 \
+     --covar simu_geno.pheno   --covar-name MALE,PC1,PC2,PC3,PC4 \
+     --pred-list simu_geno_ldak_pred.list \
+     --extract simu_geno_wald_extract \
      --spasqr-taus 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9 \
      --pheno-transform int \
      --threads 8 \

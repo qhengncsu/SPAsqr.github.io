@@ -31,13 +31,13 @@ A single `./grab2 --method SPAsqr` call:
 
 We assume the artifacts produced by [Workflow 1]({{ site.baseurl }}/docs/workflow-1.html) and [Workflow 2]({{ site.baseurl }}/docs/workflow-2.html):
 
-- `1kg.{bed,bim,fam}` — PLINK 1 fileset of variants to test.
-- `1kg_int.txt` — INT-transformed phenotype file with traits `Quantitative1`, `Quantitative2`.
-- `1kg.pheno` — full phenotype/covariate file; we pull `MALE,PC1,PC2,PC3,PC4` from it.
-- `1kg.grm.sp` — sparse GRM built by `plink2 --make-grm-sparse` (optional but recommended).
-- `ldak_pred_list.txt` — prediction list pairing each phenotype with its LOCO PGS file.
+- `simu_geno.{bed,bim,fam}` — PLINK 1 fileset of variants to test.
+- `simu_geno_int.txt` — INT-transformed phenotype file with traits `Quantitative1`, `Quantitative2`.
+- `simu_geno.pheno` — full phenotype/covariate file; we pull `MALE,PC1,PC2,PC3,PC4` from it.
+- `simu_geno.grm.sp` — sparse GRM built by `plink2 --make-grm-sparse` (optional but recommended).
+- `simu_geno_ldak_pred.list` — prediction list pairing each phenotype with its LOCO PGS file.
 
-All input data are downloadable from the [`examples/`](https://github.com/GeneticAnalysisinBiobanks/GRAB/tree/main/examples) folder of the [GRAB GitHub repository](https://github.com/GeneticAnalysisinBiobanks/GRAB) (also linked at the top-right of this page).
+All input data are downloadable from the [`data/`](https://github.com/qhengncsu/SPAsqr.github.io/tree/main/data) folder of this documentation repository.
 
 The prediction list looks like:
 
@@ -50,11 +50,11 @@ The full command:
 
 ```bash
 ./grab2 --method SPAsqr \
-     --bfile 1kg \
-     --pheno 1kg_int.txt --pheno-name Quantitative1,Quantitative2 \
-     --covar 1kg.pheno   --covar-name MALE,PC1,PC2,PC3,PC4 \
-     --sp-grm-plink2 1kg.grm.sp \
-     --pred-list ldak_pred_list.txt \
+     --bfile simu_geno \
+     --pheno simu_geno_int.txt --pheno-name Quantitative1,Quantitative2 \
+     --covar simu_geno.pheno   --covar-name MALE,PC1,PC2,PC3,PC4 \
+     --sp-grm-plink2 simu_geno.grm.sp \
+     --pred-list simu_geno_ldak_pred.list \
      --spasqr-h-scale 3 \
      --spasqr-taus 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9 \
      --pheno-transform int \
@@ -118,7 +118,7 @@ fitting the null SQR model:
 - `standardize` — centre and scale to unit variance.
 
 Because the transform is applied internally, **you may pass either the
-raw `1kg.pheno` or the pre-INT'd `1kg_int.txt`** as the
+raw `simu_geno.pheno` or the pre-INT'd `simu_geno_int.txt`** as the
 `--pheno` input — INT of an already-INT'd column reproduces the same
 column (ranks are preserved), so the two are equivalent under
 `--pheno-transform int`.
@@ -128,13 +128,13 @@ that the offset and the response live on the same scale:
 
 | If the LOCO PGS was trained on … | … pass to SPA<sub>SQR</sub> |
 | -------------------------------- | ---------------- |
-| INT-transformed $Y$ (`1kg_int.txt`)   | `--pheno-transform int` |
-| Raw $Y$ (`1kg.pheno`)                 | `--pheno-transform standardize` — LDAK-KVIK / REGENIE internally standardize. |
+| INT-transformed $Y$ (`simu_geno_int.txt`)   | `--pheno-transform int` |
+| Raw $Y$ (`simu_geno.pheno`)                 | `--pheno-transform standardize` — LDAK-KVIK / REGENIE internally standardize. |
 | Pre-standardized $Y$                  | `--pheno-transform standardize` |
 
 We recommend the **INT path** documented in
 [Workflow 1]({{ site.baseurl }}/docs/workflow-1.html): pre-INT with
-`grab2 --int-pheno`, feed `1kg_int.txt` to LDAK-KVIK or REGENIE, and
+`grab2 --int-pheno`, feed `simu_geno_int.txt` to LDAK-KVIK or REGENIE, and
 leave `--pheno-transform` at its default.
 
 ---

@@ -26,16 +26,16 @@ $$
 
 For genuinely unrelated cohorts $\Phi \approx I_n$ and the formula reduces to the unrelated variance $\widehat{\sigma}_g^{\,2}(G_j)\, R^{\top}\, R$.
 
-In addition to the files from [Workflow 1]({{ site.baseurl }}/docs/workflow-1.html) — `1kg.{bed,bim,fam}`, `1kg.pheno`, and the LOCO PGS prediction list `ldak_pred_list.txt` (or `regenie_step1_pred.list`) — Workflow 2 requires two additional files:
+In addition to the files from [Workflow 1]({{ site.baseurl }}/docs/workflow-1.html) — `simu_geno.{bed,bim,fam}`, `simu_geno.pheno`, and the LOCO PGS prediction list `simu_geno_ldak_pred.list` (or `simu_geno_regenie_pred.list`) — Workflow 2 requires two additional files:
 
 ```
-1kg.grm.sp     sparse GRM, three columns: 0-based i, 0-based j, correlation
-1kg.grm.id     companion ID file: one row per subject, FID  IID
+simu_geno.grm.sp     sparse GRM, three columns: 0-based i, 0-based j, correlation
+simu_geno.grm.id     companion ID file: one row per subject, FID  IID
 ```
 
 The sparse GRM is a **one-time cost per cohort**: once built, the same `.grm.sp` is reused across every trait, every chromosome, and every quantile. The companion `.grm.id` file lists the subject IDs in the same order as the 0-based indices in `.grm.sp`; GRAB auto-detects it from the `.grm.sp` prefix.
 
-A pre-built `1kg.grm.sp` / `1kg.grm.id` pair, together with all the inputs from Workflow 1, is available in the [`examples/`](https://github.com/GeneticAnalysisinBiobanks/GRAB/tree/main/examples) folder of the [GRAB GitHub repository](https://github.com/GeneticAnalysisinBiobanks/GRAB) (also linked at the top-right of this page) for users to replicate this tutorial verbatim.
+A pre-built `simu_geno.grm.sp` / `simu_geno.grm.id` pair, together with all the inputs from Workflow 1, is available in the [`data/`](https://github.com/qhengncsu/SPAsqr.github.io/tree/main/data) folder of this documentation repository for users to replicate this tutorial verbatim.
 
 
 ## Computing the sparse GRM with PLINK 2
@@ -44,20 +44,20 @@ The GRM is a concept popularized by the [GCTA](https://yanglab.westlake.edu.cn/s
 
 ```bash
 ./plink2 \
-    --bfile 1kg \
+    --bfile simu_geno \
     --maf 0.01 \
     --make-grm-sparse 0.05 \
     --threads 8 \
-    --out 1kg
+    --out simu_geno
 ```
 
 - `--maf 0.01` restricts GRM computation to common variants with minor allele frequency $\geq 0.01$.
 - `--make-grm-sparse 0.05` retains genetic correlation coefficients above $0.05$ and zeroes out the rest.
 
-The command produces `1kg.grm.sp` along with the companion `1kg.grm.id`. The `.grm.sp` file is a three-column text file:
+The command produces `simu_geno.grm.sp` along with the companion `simu_geno.grm.id`. The `.grm.sp` file is a three-column text file:
 
 ```
-$ head 1kg.grm.sp
+$ head simu_geno.grm.sp
 0   0   1.0024
 1   1   0.9981
 2   2   1.0107
@@ -65,7 +65,7 @@ $ head 1kg.grm.sp
 4   3   0.2503      # first cousin of subject 3
 ```
 
-Sample $i$, $j$ indices are **0-based** and correspond to the row order in `1kg.grm.id`.
+Sample $i$, $j$ indices are **0-based** and correspond to the row order in `simu_geno.grm.id`.
 
 
 ## SPA<sub>SQR</sub> association testing with GRM-aware variance
@@ -74,11 +74,11 @@ With the LOCO PGS prediction list from [Workflow 1]({{ site.baseurl }}/docs/work
 
 ```bash
 ./grab2 --method SPAsqr \
-    --bfile 1kg \
-    --pheno 1kg_int.txt --pheno-name Quantitative1,Quantitative2 \
-    --covar 1kg.pheno   --covar-name MALE,PC1,PC2,PC3,PC4 \
-    --pred-list ldak_pred_list.txt \
-    --sp-grm-plink2 1kg.grm.sp \
+    --bfile simu_geno \
+    --pheno simu_geno_int.txt --pheno-name Quantitative1,Quantitative2 \
+    --covar simu_geno.pheno   --covar-name MALE,PC1,PC2,PC3,PC4 \
+    --pred-list simu_geno_ldak_pred.list \
+    --sp-grm-plink2 simu_geno.grm.sp \
     --out spasqr_results
 ```
 
@@ -89,37 +89,37 @@ LDAK-KVIK LOCO PGS + sparse GRM, with INT:
 
 ```bash
 # 1. INT-transform the selected traits
-./grab2 --int-pheno --pheno 1kg.pheno --pheno-name Quantitative1,Quantitative2 --out 1kg_int
+./grab2 --int-pheno --pheno simu_geno.pheno --pheno-name Quantitative1,Quantitative2 --out simu_geno_int
 
 # 2. Train the LOCO PGS on the INT-transformed Y
 ./ldak6.2.linux \
     --kvik-step1 ldak_step1 \
-    --bfile 1kg \
-    --pheno 1kg_int.txt --mpheno ALL \
-    --covar 1kg.pheno   --covar-names MALE,PC1,PC2,PC3,PC4 \
+    --bfile simu_geno \
+    --pheno simu_geno_int.txt --mpheno ALL \
+    --covar simu_geno.pheno   --covar-names MALE,PC1,PC2,PC3,PC4 \
     --max-threads 8
 
 # 3. Build the LDAK pred-list
-cat > ldak_pred_list.txt <<EOF
+cat > simu_geno_ldak_pred.list <<EOF
 Quantitative1   $(pwd)/ldak_step1.step1.pheno1.loco.prs
 Quantitative2   $(pwd)/ldak_step1.step1.pheno2.loco.prs
 EOF
 
 # 4. Build the sparse GRM (one-time cost)
 ./plink2 \
-    --bfile 1kg \
+    --bfile simu_geno \
     --maf 0.01 \
     --make-grm-sparse 0.05 \
     --threads 8 \
-    --out 1kg
+    --out simu_geno
 
 # 5. Run SPAsqr with both the LOCO PGS and the sparse GRM
 ./grab2 --method SPAsqr \
-    --bfile 1kg \
-    --pheno 1kg_int.txt --pheno-name Quantitative1,Quantitative2 \
-    --covar 1kg.pheno   --covar-name MALE,PC1,PC2,PC3,PC4 \
-    --pred-list ldak_pred_list.txt \
-    --sp-grm-plink2 1kg.grm.sp \
+    --bfile simu_geno \
+    --pheno simu_geno_int.txt --pheno-name Quantitative1,Quantitative2 \
+    --covar simu_geno.pheno   --covar-name MALE,PC1,PC2,PC3,PC4 \
+    --pred-list simu_geno_ldak_pred.list \
+    --sp-grm-plink2 simu_geno.grm.sp \
     --out spasqr_results
 ```
 
@@ -127,32 +127,32 @@ REGENIE LOCO PGS + sparse GRM, with INT:
 
 ```bash
 # 1. INT-transform the selected traits
-./grab2 --int-pheno --pheno 1kg.pheno --pheno-name Quantitative1,Quantitative2 --out 1kg_int
+./grab2 --int-pheno --pheno simu_geno.pheno --pheno-name Quantitative1,Quantitative2 --out simu_geno_int
 
 # 2. Train the LOCO PGS on the INT-transformed Y
 ./regenie \
     --step 1 \
-    --bed 1kg \
-    --phenoFile 1kg_int.txt --phenoColList Quantitative1,Quantitative2 \
-    --covarFile 1kg.pheno   --covarColList MALE,PC1,PC2,PC3,PC4 \
+    --bed simu_geno \
+    --phenoFile simu_geno_int.txt --phenoColList Quantitative1,Quantitative2 \
+    --covarFile simu_geno.pheno   --covarColList MALE,PC1,PC2,PC3,PC4 \
     --bsize 1000 --threads 8 \
-    --out regenie_step1
+    --out simu_geno_regenie
 
 # 3. Build the sparse GRM (one-time cost)
 ./plink2 \
-    --bfile 1kg \
+    --bfile simu_geno \
     --maf 0.01 \
     --make-grm-sparse 0.05 \
     --threads 8 \
-    --out 1kg
+    --out simu_geno
 
 # 4. Run SPAsqr with REGENIE's native pred-list and the sparse GRM
 ./grab2 --method SPAsqr \
-    --bfile 1kg \
-    --pheno 1kg_int.txt --pheno-name Quantitative1,Quantitative2 \
-    --covar 1kg.pheno   --covar-name MALE,PC1,PC2,PC3,PC4 \
-    --pred-list regenie_step1_pred.list \
-    --sp-grm-plink2 1kg.grm.sp \
+    --bfile simu_geno \
+    --pheno simu_geno_int.txt --pheno-name Quantitative1,Quantitative2 \
+    --covar simu_geno.pheno   --covar-name MALE,PC1,PC2,PC3,PC4 \
+    --pred-list simu_geno_regenie_pred.list \
+    --sp-grm-plink2 simu_geno.grm.sp \
     --out spasqr_results
 ```
 
