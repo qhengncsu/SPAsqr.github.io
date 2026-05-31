@@ -10,13 +10,9 @@ has_children: false
 
 SPA<sub>SQR</sub> ships as the `SPAsqr` method of the [**GRAB**](https://github.com/GeneticAnalysisinBiobanks/GRAB) command-line binary. There are two install paths, matching the [upstream GRAB README](https://github.com/GeneticAnalysisinBiobanks/GRAB#readme).
 
-## Option 1 — Prebuilt binary (recommended)
+## Option 1 — Build from source (recommended)
 
-Download the archive for your platform from the [GRAB Releases page](https://github.com/GeneticAnalysisinBiobanks/GRAB/releases/latest). Builds are provided for `linux-x86_64`, `linux-aarch64`, `macos-arm64`, and `windows-x86_64`. Extract, drop `grab2` somewhere on your `$PATH`, done.
-
-## Option 2 — Build from source
-
-GRAB is self-contained — all third-party libraries are bundled in the source tree, so the only requirements are a C++17 compiler and GNU `make`.
+GRAB is self-contained — all third-party libraries are bundled in the source tree, so the only requirements are a C++17 compiler and GNU `make`. Building from source produces a binary tuned to your machine's CPU.
 
 ```bash
 git clone --depth=1 https://github.com/GeneticAnalysisinBiobanks/GRAB.git
@@ -25,7 +21,9 @@ make -j
 build/grab2 --version
 ```
 
-The build produces a single statically linked binary (`build/grab2`) optimized for your machine's CPU.
+## Option 2 — Prebuilt binary
+
+Download the archive for your platform from the [GRAB Releases page](https://github.com/GeneticAnalysisinBiobanks/GRAB/releases/latest). Builds are provided for `linux-x86_64`, `linux-aarch64`, `macos-arm64`, and `windows-x86_64`. Extract, drop `grab2` somewhere on your `$PATH`, done.
 
 ## External tools
 
