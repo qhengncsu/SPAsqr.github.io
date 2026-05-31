@@ -17,7 +17,7 @@ GRAB is self-contained — all third-party libraries are bundled in the source t
 ```bash
 git clone --depth=1 https://github.com/GeneticAnalysisinBiobanks/GRAB.git
 cd GRAB
-make -j
+make -j$(nproc)              # macOS: make -j$(sysctl -n hw.ncpu)
 build/grab2 --version
 ```
 
@@ -31,4 +31,4 @@ Our workflows call three external programs. Easiest install path for each:
 
 - [**LDAK-KVIK**](https://dougspeed.com/ldak-kvik/) — download the prebuilt binary from the LDAK site.
 - [**REGENIE**](https://rgcgithub.github.io/regenie/) — `conda install -c conda-forge -c bioconda regenie`.
-- [**PLINK 2**](https://www.cog-genomics.org/plink/2.0/) — download the prebuilt binary from the PLINK 2 site.
+- [**PLINK2**](https://www.cog-genomics.org/plink/2.0/) — download the prebuilt binary from the PLINK 2 site.
