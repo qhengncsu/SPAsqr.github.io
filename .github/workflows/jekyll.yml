@@ -37,8 +37,13 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.3'
-          bundler-cache: true # runs 'bundle install' and caches installed gems automatically
-          cache-version: 1
+          bundler-cache: false   # no Gemfile.lock is checked in, so the
+                                 # bundler-cache key is unstable; install
+                                 # gems fresh on each run instead.
+      - name: Install gems
+        run: |
+          bundle config set --local path 'vendor/bundle'
+          bundle install --jobs 4 --retry 3
       - name: Setup Pages
         id: pages
         uses: actions/configure-pages@v5
