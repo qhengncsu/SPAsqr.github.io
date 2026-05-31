@@ -207,9 +207,9 @@ spasqr_results.Quantitative1.SPAsqr
 spasqr_results.Quantitative2.SPAsqr
 ```
 
-Each file lists per-variant statistics across 28 columns: nine variant-level QC fields, the Cauchy-combined $P_\mathrm{CCT}$, nine per-$\tau$ $p$-values, and nine per-$\tau$ $Z$-scores. We show the two top hits for `Quantitative1` (sorted by `P_CCT`), split into three blocks for readability — in the file all 28 columns sit on a single tab-delimited row per variant.
+Each file has one row per variant and 28 columns. Below are the top two hits for `Quantitative1`, split into three blocks so the rows fit on the page — in the file these all sit on a single tab-separated line.
 
-Columns 1–10 (variant identifier, QC fields, Cauchy-combined $p$-value):
+Columns 1–10 — variant info, QC fields, and the combined $p$-value `P_CCT`:
 
 ```
 CHROM  POS     ID        REF  ALT  MISS_RATE  ALT_FREQ  MAC   HWE_P    P_CCT
@@ -217,7 +217,7 @@ CHROM  POS     ID        REF  ALT  MISS_RATE  ALT_FREQ  MAC   HWE_P    P_CCT
 10     122000  SNP_2170  A    G    0          0.267     2670  0.1933   1.60e-06
 ```
 
-Columns 11–19 (per-$\tau$ $p$-values, $\tau = 0.1, 0.2, \ldots, 0.9$):
+Columns 11–19 — per-quantile $p$-values, $\tau = 0.1, 0.2, \ldots, 0.9$:
 
 ```
 P_tau0.1   P_tau0.2   P_tau0.3   P_tau0.4   P_tau0.5   P_tau0.6   P_tau0.7   P_tau0.8   P_tau0.9
@@ -225,7 +225,7 @@ P_tau0.1   P_tau0.2   P_tau0.3   P_tau0.4   P_tau0.5   P_tau0.6   P_tau0.7   P_t
 3.62e-08   8.94e-07   1.83e-06   3.21e-06   2.77e-06   2.20e-06   2.06e-06   2.05e-06   1.27e-06
 ```
 
-Columns 20–28 (per-$\tau$ $Z$-scores, same $\tau$ order):
+Columns 20–28 — per-quantile $Z$-scores (signed), same $\tau$ order:
 
 ```
 Z_tau0.1  Z_tau0.2  Z_tau0.3  Z_tau0.4  Z_tau0.5  Z_tau0.6  Z_tau0.7  Z_tau0.8  Z_tau0.9
@@ -233,7 +233,7 @@ Z_tau0.1  Z_tau0.2  Z_tau0.3  Z_tau0.4  Z_tau0.5  Z_tau0.6  Z_tau0.7  Z_tau0.8  
 -5.51     -4.92     -4.78     -4.66     -4.70     -4.74     -4.75     -4.75     -4.84
 ```
 
-`P_CCT` is the Cauchy-combined $p$-value across all $\tau$ levels and is the main genome-wide significance result. The `P_tauX` and `Z_tauX` columns give the per-quantile $p$-values and signed $Z$-scores; comparing them across $\tau$ yields insight into the heterogeneity of effect sizes across the phenotype distribution.
+`P_CCT` is the main result: the nine per-$\tau$ $p$-values combined into one via the Cauchy combination test. The `P_tauX` and `Z_tauX` columns let you see which quantiles the signal is coming from — e.g. SNP_1428 has positive $Z$ at every $\tau$, SNP_2170 has negative $Z$ at every $\tau$.
 
 
 ### End-to-end recipes (with INT)

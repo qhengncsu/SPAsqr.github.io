@@ -8,13 +8,13 @@ has_children: false
 
 # **Effect-size estimation — `--spasqr-mode wald`**
 
-The default `--spasqr-mode score` is optimized for **genome-wide screening**: it tests $H_0\!: \gamma_\tau = 0$ at every $\tau$ via a rank-score statistic computed from a single null-model fit per chromosome, and returns calibrated $p$-values and signed $Z$-scores per marker — but **not** the per-allele effect estimate $\hat\gamma_\tau$ itself. For follow-up analyses on a small candidate set (top hits, prior-literature variants, meta-analysis summary stats), switch to **Wald mode**. Wald mode re-fits the *full* model
+The default `--spasqr-mode score` is optimized for **genome-wide screening**: it tests $H_0\!: \gamma_\tau = 0$ at every $\tau$ via a rank-score statistic computed from a single null-model fit per chromosome, and returns calibrated $p$-values and signed $Z$-scores per marker — but **not** the per-allele effect estimate $\hat\gamma_\tau$ itself. For follow-up analyses on a small candidate set (top hits, prior-literature variants), switch to **Wald mode**. Wald mode re-fits the *full* model
 
 $$
 Q_\tau(Y \mid X, G_j) \;=\; X^\top \beta \;+\; G_j\, \gamma_{j,\tau}
 $$
 
-once **per (marker, $\tau$)** by smoothed M-estimation, and reports $\hat\gamma_{j,\tau}$, its sandwich-variance standard error, the Wald statistic, and the two-sided $p$-value. Wald mode is intended for short curated list of SNPs specified via `--extract`, not for a full genome-wide scan.
+once **per (marker, $\tau$)** and reports $\hat\gamma_{j,\tau}$, its sandwich-variance standard error, the Wald statistic, and the two-sided $p$-value. Wald mode is meant for a short, curated list of SNPs passed via `--extract`, not for a full genome-wide scan.
 
 ## Example
 
@@ -32,7 +32,7 @@ SNP_3240
 SNP_4380
 ```
 
-We then estimate the per-allele effect sizes for those variants on both traits in a single call:
+We then estimate the per-allele effect sizes for those variants on both traits via:
 
 ```bash
 ./grab2 --method SPAsqr --spasqr-mode wald \
@@ -47,7 +47,7 @@ We then estimate the per-allele effect sizes for those variants on both traits i
      --out spasqr_effect
 ```
 
-The outputs `spasqr_effect.Quantitative1.SPAsqr` and `spasqr_effect.Quantitative2.SPAsqr` share the score-mode **wide** layout, with one row per variant and four columns per $\tau$:
+The outputs `spasqr_effect.Quantitative1.SPAsqr` and `spasqr_effect.Quantitative2.SPAsqr` share the score-mode output format, with two additional columns per $\tau$:
 
 ```
 CHROM  POS  ID  REF  ALT  MISS_RATE  ALT_FREQ  MAC  HWE_P  P_CCT
@@ -64,4 +64,4 @@ For each requested $\tau$:
 - `Z_tau<val>` and `P_tau<val>` — the Wald statistic $\hat\gamma_\tau / \widehat{\mathrm{SE}}$ and the two-sided normal $p$-value.
 
 
-Wald mode defaults to a narrower bandwidth than score mode (`--spasqr-h-scale 10` vs `3`) to keep smoothing bias on $\hat\gamma_\tau$ low at the cost of slightly slower convergence; override via `--spasqr-h-scale <k>` when warranted.
+Wald mode defaults to a narrower bandwidth than score mode (`--spasqr-h-scale 10` vs `3`) to keep smoothing bias on $\hat\gamma_\tau$ low at the cost of slightly slower convergence; override via `--spasqr-h-scale <k>` when desired.
