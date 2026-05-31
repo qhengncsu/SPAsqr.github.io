@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Strategies for improving statistical power
-nav_order: 7
+nav_order: 8
 description: "Power-improving knobs in the SPAsqr pipeline."
 has_children: false
 ---

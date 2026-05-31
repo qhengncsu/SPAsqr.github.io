@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Running SPAsqr
-nav_order: 5
+nav_order: 6
 description: "Run the SPAsqr association test via the GRAB CLI."
 has_children: false
 ---
