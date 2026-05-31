@@ -29,8 +29,8 @@ The build produces a single statically linked binary (`build/grab2`) optimized f
 
 ## External tools
 
-GRAB itself has no runtime dependencies, but the surrounding pipeline calls three external programs that you install separately. Recommended install path for each:
+The workflows on this site call three external programs. Easiest install path for each:
 
-- [**LDAK-KVIK**](https://dougspeed.com/ldak-kvik/) — LOCO polygenic score training (Workflows 1 & 2). **Download the static binary** from the LDAK site.
-- [**REGENIE**](https://rgcgithub.github.io/regenie/) — alternative LOCO PGS trainer. **Install via** `conda install -c bioconda regenie`.
-- [**PLINK 2**](https://www.cog-genomics.org/plink/2.0/) — sparse GRM construction (Workflow 2). **Download the prebuilt binary** from the PLINK 2 site.
+- [**LDAK-KVIK**](https://dougspeed.com/ldak-kvik/) — download the static binary from the LDAK site.
+- [**REGENIE**](https://rgcgithub.github.io/regenie/) — `conda install -c bioconda regenie`.
+- [**PLINK 2**](https://www.cog-genomics.org/plink/2.0/) — download the prebuilt binary from the PLINK 2 site.
