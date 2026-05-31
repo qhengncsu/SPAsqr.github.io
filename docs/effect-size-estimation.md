@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Effect-size estimation
-nav_order: 7
+nav_order: 6
 description: "Per-marker, per-tau γ̂_τ and SE via SPAsqr Wald mode."
 has_children: false
 ---

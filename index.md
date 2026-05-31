@@ -76,7 +76,7 @@ unbalanced traits. Per-$\tau$ $p$-values are combined into a single
 - [Installation]({{ site.baseurl }}/docs/installation.html) — building the GRAB binary.
 - [Workflow 1: LOCO PGS + SPA<sub>SQR</sub>]({{ site.baseurl }}/docs/workflow-1.html)
 - [Workflow 2: LOCO PGS + GRM + SPA<sub>SQR</sub>]({{ site.baseurl }}/docs/workflow-2.html)
-- [Running SPA<sub>SQR</sub>]({{ site.baseurl }}/docs/running-spasqr.html) — the main usage page.
+- [All traits at once vs one trait at a time]({{ site.baseurl }}/docs/all-vs-per-trait.html) — scaling SPA<sub>SQR</sub> across many phenotypes.
 - [Effect-size estimation]({{ site.baseurl }}/docs/effect-size-estimation.html) — Wald mode.
 - [Strategies for improving statistical power]({{ site.baseurl }}/docs/strategies.html)
 - [FAQ]({{ site.baseurl }}/docs/faq.html)
