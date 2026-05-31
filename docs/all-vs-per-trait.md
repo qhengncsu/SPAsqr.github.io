@@ -8,11 +8,15 @@ has_children: false
 
 # **All traits at once vs one trait at a time**
 
-[Workflow 1]({{ site.baseurl }}/docs/workflow-1.html) and [Workflow 2]({{ site.baseurl }}/docs/workflow-2.html) batch every trait of interest into a single LDAK / REGENIE / GRAB invocation — `--mpheno ALL`, `--phenoColList Quantitative1,Quantitative2`, `--pheno-name Quantitative1,Quantitative2`. That **all-traits-at-once** style is the simplest possible recipe, fits the tutorial, and is what we recommend when you are running, say, fewer than a handful of phenotypes on a multi-core node.
+[Workflow 1]({{ site.baseurl }}/docs/workflow-1.html) and [Workflow 2]({{ site.baseurl }}/docs/workflow-2.html) batch every trait of interest into a single LDAK / REGENIE / GRAB invocation — `--mpheno ALL`, `--phenoColList Quantitative1,Quantitative2`, `--pheno-name Quantitative1,Quantitative2`. This **all-traits-at-once** style is the simplest possible recipe and is what we show in the tutorial. It is also the right choice when you are running just a handful of phenotypes and never expect to come back to debug an individual one.
 
-At biobank scale (UK Biobank, Biobank Japan, etc.) the picture changes: you typically have dozens to a hundred-plus phenotypes to analyze, the per-trait runtime is non-trivial (tens of minutes to a couple of hours), and a single multi-core node has more cores than any one GRAB / LDAK process can saturate. In that regime the natural decomposition is the reverse: **one trait per process**, each process pinned to a single thread, and a thin `bash` master launcher fans the per-trait jobs out across the node's cores in parallel. This page documents that pattern for LDAK-KVIK + SPA<sub>SQR</sub>; REGENIE itself already handles multi-trait Step 1 efficiently in a single invocation, so the per-trait pattern is only useful for the SPA<sub>SQR</sub> stage downstream of REGENIE.
+For any analysis at meaningful scale, however, the **one-trait-at-a-time** decomposition — one single-threaded process per trait, $N$ processes fanned out across the node by a thin `bash` master launcher — is the more practical pattern, for three reasons that compound:
 
-The recipe below uses the same `simu_geno` tutorial fixture as the rest of the documentation, with `Quantitative1` and `Quantitative2` playing the role of a real trait list of length $N$.
+- **Memory.** An all-trait LDAK or SPA<sub>SQR</sub> process holds every trait's design matrix, working buffers, and intermediate fits in RAM at once. Multi-trait peak memory grows roughly linearly in the trait count, and on a biobank-sized cohort with a couple hundred phenotypes this can outright OOM a node. A per-trait process holds exactly one trait's working set; total peak memory is bounded by `MAX_PARALLEL × per-trait-memory`, which you control directly.
+- **Debugging and restart.** When one trait out of a hundred mis-converges, has a degenerate phenotype distribution, or hits a numerical edge case, an all-trait run leaves you having to disentangle which trait broke and then re-run the whole batch. Per-trait runs isolate every failure to a single log file (`log.spasqr.${trait}`) and a single restartable script invocation.
+- **Speed.** Within a single LDAK or SPA<sub>SQR</sub> process, parallelism over traits is limited — neither tool achieves a clean $N$× speedup from a multi-trait call. Spawning $N$ single-threaded processes and letting the OS schedule them across the node's cores typically *outperforms* one $N$-trait multi-threaded call. The per-trait pattern essentially trades a constrained internal parallelism for a wider, simpler process-level one.
+
+This page documents that pattern for LDAK-KVIK + SPA<sub>SQR</sub>. REGENIE Step 1 is the one exception — it handles a multi-trait `--phenoColList` very efficiently in one invocation and should be run all-at-once; only the downstream SPA<sub>SQR</sub> stage benefits from per-trait fan-out. The recipe below uses the same `simu_geno` tutorial fixture, with `Quantitative1` and `Quantitative2` playing the role of a real trait list of length $N$.
 
 ## Shared preparatory steps
 
@@ -28,7 +32,7 @@ These two are run once and reused across every trait:
          --threads 8 --out simu_geno
 ```
 
-## Per-trait runners
+## Per-trait runner scripts
 
 `run_ldak_step1.sh` — fit the LDAK Step 1 null model for one trait, single-threaded:
 
@@ -44,7 +48,7 @@ trait=$1
     --max-threads 1
 ```
 
-`run_spasqr.sh` — assemble a single-line pred-list and run SPA<sub>SQR</sub> for one trait, single-threaded:
+`run_spasqr.sh` — assemble a one-line pred-list and run SPA<sub>SQR</sub> for one trait, single-threaded:
 
 ```bash
 #!/usr/bin/env bash
@@ -66,11 +70,11 @@ echo "${trait}    $(pwd)/ldak_${trait}.step1.loco.prs" > .pred_${trait}.list
 rm -f .pred_${trait}.list
 ```
 
-Each script takes the trait name as its single argument and is intentionally as small as possible: no `time -v` wrappers, no embedded logic, just one invocation pinned to one thread.
+Each script takes the trait name as its single argument and is deliberately as small as possible — one invocation, one thread, one trait — so that the parallelism lives entirely in the launcher above it.
 
 ## Master launcher
 
-The master loops over the trait list and backgrounds each per-trait call, holding the live job count at `MAX_PARALLEL` via `wait -n` — a pure `bash` semaphore that returns as soon as **any** background job finishes, no GNU parallel or `xargs -P` required:
+The master loops over the trait list and backgrounds each per-trait call, holding the live job count at `MAX_PARALLEL` via `wait -n` — a pure `bash` semaphore that returns as soon as **any** background job finishes, with no dependency on GNU parallel or `xargs -P`:
 
 ```bash
 #!/usr/bin/env bash
@@ -92,13 +96,6 @@ done
 wait
 ```
 
-The two phases are run sequentially because Phase 2 consumes the `.loco.prs` files produced by Phase 1. Within each phase every trait runs independently, so on an $n$-core node with $N$ traits and per-trait wall time $T$, the all-phase wall time is approximately $T \cdot \lceil N / n \rceil$, regardless of how many traits there are.
+The two phases run sequentially because Phase 2 consumes the `.loco.prs` files produced by Phase 1. Within each phase every trait runs independently, so on an $n$-core node with $N$ traits and per-trait wall time $T$, the all-phase wall time is approximately $T \cdot \lceil N / n \rceil$ — linear in the trait count and inversely linear in the core count, with no internal-threading overhead to dilute it.
 
-## When to prefer which mode
-
-| Setting | Recommended mode |
-| ------- | ---------------- |
-| Small fixture or a handful of traits, single tutorial node | **All-traits-at-once** ([Workflow 1]({{ site.baseurl }}/docs/workflow-1.html), [Workflow 2]({{ site.baseurl }}/docs/workflow-2.html)) — minimal recipe, no script plumbing. |
-| Biobank-scale analysis with many traits on one multi-core node | **One-trait-at-a-time** + bash master launcher, as above — saturates the node and isolates per-trait failures. |
-| REGENIE Step 1 alone | Always **all-traits-at-once**; REGENIE Step 1 handles a multi-trait `--phenoColList` efficiently in a single invocation. Only the downstream SPA<sub>SQR</sub> stage benefits from per-trait fan-out. |
-| Many nodes (SLURM, PBS, k8s) | The per-trait runner scripts above drop straight into a SLURM array job (`--array=1-${N}`, dispatching trait $i$ from a manifest); no further changes are needed beyond replacing the bash master with the cluster scheduler. |
+The same per-trait runner scripts drop straight into a SLURM array job (`#SBATCH --array=1-${N}`, with trait $i$ pulled from a manifest file) when you want to scale beyond a single node; the only thing the cluster scheduler replaces is the bash master launcher itself.
