@@ -1,6 +1,6 @@
 ---
 layout: default
-title: "One-trait-at-a-time is the best practice when analyzing many phenotypes"
+title: "All-traits-at-once vs one-trait-at-a-time"
 nav_order: 5
 description: "Two ways to run many traits: a single all-trait call vs one process per trait with a bash master launcher."
 has_children: false

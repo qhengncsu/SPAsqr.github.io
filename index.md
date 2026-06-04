@@ -11,7 +11,7 @@ permalink: /
 SPA<sub>SQR</sub> is a fast, robust framework for **quantile regression
 GWAS** on quantitative traits at biobank scale. It is implemented as the
 `SPAsqr` method of the
-[**GRAB**](https://github.com/qhengncsu/GRAB-feat-cpp) command-line
+[**GRAB**](https://github.com/GeneticAnalysisinBiobanks/GRAB) command-line
 binary — a single C++ executable that runs on Linux, macOS, and Windows.
 
 ## What is quantile regression GWAS?
