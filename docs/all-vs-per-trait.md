@@ -60,12 +60,15 @@ Each script takes the trait name as its single argument and is deliberately as s
 
 ## Master launcher
 
-The master loops over the trait list and sends each per-trait call to run in the background via `&`, holding the live job count at `MAX_PARALLEL` via `wait -n` — a semaphore that returns as soon as **any** background job finishes:
+The master derives the trait list automatically from the phenotype-file header — `head -n1` reads the header, `tr -s ' \t' ' '` collapses runs of spaces/tabs to a single space, and `cut -d' ' -f3-` keeps every column after the `FID IID` keys (adjust `-f3-` to `-f2-` if your file has a single `IID` key column). It then loops over that list and sends each per-trait call to run in the background via `&`, holding the live job count at `MAX_PARALLEL` via `wait -n` — a semaphore that returns as soon as **any** background job finishes:
 
 ```bash
 #!/usr/bin/env bash
-TRAITS="Quantitative1 Quantitative2"
+PHENO=simu_geno_int.txt
 MAX_PARALLEL=8                           # number of concurrent jobs
+
+# Trait list = every column after the FID/IID keys in the phenotype header
+TRAITS=$(head -n1 "$PHENO" | tr -s ' \t' ' ' | cut -d' ' -f3-)
 
 # Phase 1: LDAK Step 1 for every trait
 for trait in $TRAITS; do
