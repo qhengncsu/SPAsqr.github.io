@@ -19,14 +19,6 @@ has_children: false
 - **Covariate** — mean-imputed per column; no subject is dropped for a
   missing covariate (a fully-missing column is an error).
 
-### Should I fill in missing covariates before running?
-
-Recommended. Workflows 1–2 feed the same covariates to LDAK-KVIK / REGENIE
-in step 1, and those tools each have their own conventions for encoding
-missing values — so the cleanest path is to resolve missing covariates
-yourself up front, giving every tool identical, complete data. GRAB will
-still mean-impute any covariate cells you leave missing.
-
 ---
 
 ## Methodology
