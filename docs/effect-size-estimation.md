@@ -8,17 +8,11 @@ has_children: false
 
 # **Effect-size estimation — `--spasqr-mode wald`**
 
-The default `--spasqr-mode score` is optimized for **genome-wide screening**: it tests $H_0: \gamma_\tau = 0$ at every $\tau$ via a rank-score statistic computed from a single null-model fit per chromosome, and returns calibrated $p$-values and signed $Z$-scores per marker — but **not** the per-allele effect estimate $\hat\gamma_\tau$ itself. For follow-up analyses on a small candidate set (top GWAS hits, prior-literature variants), switch to **Wald mode**. Wald mode re-fits the *full* model
-
-$$
-Q_\tau(Y \mid X, G) \;=\; X^\top \beta_\tau \;+\; G\, \gamma_{\tau}
-$$
-
-once **per (marker, $\tau$)** and reports $\hat\gamma_{\tau}$, its sandwich-variance standard error, the Wald statistic, and the two-sided $p$-value. Wald mode is meant for a short, curated list of SNPs passed via `--extract`, not for a full genome-wide scan.
+The default mode of SPA<sub>SQR</sub> **genome-wide screening**: it tests $H_0: \gamma_\tau = 0$ at every $\tau$ in a score testing framework,  where a single null-model is fit for each chromosome and quantile. It provides calibrated $p$-values and signed $Z$-scores per marker. However, it does **not** provide effect size estimation. If we are interested in the effect size estimates on a small candidate SNP list (top GWAS hits, prior-literature variants), GRAB provides the following **Wald mode**. 
 
 ## Example
 
-The user prepares a plain-text file (here `simu_geno_wald_extract`) listing one variant ID per line — typically the genome-wide-significant hits from the score-mode output of [Workflow 1]({{ site.baseurl }}/docs/workflow-1.html), or a curated set from prior literature. This documentation repository provides an 8-variant example list at [`data/simu_geno_wald_extract`](https://github.com/qhengncsu/SPAsqr.github.io/tree/main/data):
+The user prepares a plain-text file (here `simu_geno_wald_extract`) listing one variant ID per line — typically the genome-wide-significant hits from the score-mode output, or a curated list from prior literature. This documentation repository provides an 8-variant example list at [`data/simu_geno_wald_extract`](https://github.com/qhengncsu/SPAsqr.github.io/tree/main/data):
 
 ```
 $ cat simu_geno_wald_extract
@@ -32,7 +26,7 @@ SNP_3240
 SNP_4380
 ```
 
-We then estimate the per-allele effect sizes for those variants on both traits via:
+We may estimate the effect sizes for those variants on `Quantitative1,Quantitative2` via:
 
 ```bash
 ./grab2 --method SPAsqr --spasqr-mode wald \
@@ -59,9 +53,9 @@ SE_tau0.1   ...  SE_tau0.9
 
 For each requested $\tau$:
 
-- `BETA_tau<val>` — the smoothed-QR estimate $\hat\gamma_\tau$ of the per-allele effect on the pheno-transform scale (e.g. INT scale under `--pheno-transform int`).
-- `SE_tau<val>` — the sandwich-variance standard error.
-- `Z_tau<val>` and `P_tau<val>` — the Wald statistic $\hat\gamma_\tau / \widehat{\mathrm{SE}}$ and the two-sided normal $p$-value.
+- `BETA_tau<val>` — the estimated effect size at quantile $\tau$, on the pheno-transform scale (e.g. INT scale under `--pheno-transform int`).
+- `SE_tau<val>` — standard error of `BETA_tau<val>`.
+- `Z_tau<val>` and `P_tau<val>` — Wald Z-score and two-sided $p$-values obtained via normal approximation.
 
 
-Wald mode defaults to a narrower bandwidth than score mode (`--spasqr-h-scale 10` vs `3`) to keep smoothing bias on $\hat\gamma_\tau$ low at the cost of slightly slower convergence; override via `--spasqr-h-scale <k>` when desired.
+Wald mode defaults to a narrower bandwidth than score mode (`--spasqr-h-scale 10` vs `3`) to keep smoothing bias low at the cost of slightly slower convergence; override via `--spasqr-h-scale <k>` when desired.

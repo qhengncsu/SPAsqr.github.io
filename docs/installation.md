@@ -27,8 +27,8 @@ Download the archive for your platform from the [GRAB Releases page](https://git
 
 ## External tools
 
-Our workflows call three external programs. Easiest install path for each:
+Our workflows call three external programs. In our opinion, the easiest way to install them are:
 
 - [**LDAK-KVIK**](https://dougspeed.com/ldak-kvik/) — download the prebuilt binary from the LDAK site.
 - [**REGENIE**](https://rgcgithub.github.io/regenie/) — `conda install -c conda-forge -c bioconda regenie`.
-- [**PLINK2**](https://www.cog-genomics.org/plink/2.0/) — download the prebuilt binary from the PLINK 2 site.
+- [**PLINK2**](https://www.cog-genomics.org/plink/2.0/) — download the prebuilt binary from the PLINK2 site.
