@@ -8,6 +8,27 @@ has_children: false
 
 # **Frequently asked questions**
 
+## Data input and missing values
+
+### How does GRAB represent and handle missing phenotype and covariate values?
+
+- **Missing tokens.** A phenotype / covariate cell is read as missing if it
+  is `NA`, `na`, `NaN`, `nan`, `.`, `-`, or blank.
+- **Phenotype** — handled per trait: a subject missing a trait is dropped
+  from *that* trait only (never imputed) and still contributes to others.
+- **Covariate** — mean-imputed per column; no subject is dropped for a
+  missing covariate (a fully-missing column is an error).
+
+### Should I fill in missing covariates before running?
+
+Recommended. Workflows 1–2 feed the same covariates to LDAK-KVIK / REGENIE
+in step 1, and those tools each have their own conventions for encoding
+missing values — so the cleanest path is to resolve missing covariates
+yourself up front, giving every tool identical, complete data. GRAB will
+still mean-impute any covariate cells you leave missing.
+
+---
+
 ## Methodology
 
 ### How is SPA<sub>SQR</sub> different from classical mean-based GWAS (BOLT-LMM / REGENIE)?
@@ -105,18 +126,8 @@ help marginally; over-subscribing hurts. On a 16-core node, use
 
 ## Inputs and outputs
 
-### What phenotype-file format does SPA<sub>SQR</sub> expect?
-
-Whitespace-separated, with a header line `FID IID Y1 Y2 ...`. Missing
-entries may be `NA`, `na`, `NaN`, `nan`, `.`, `-`, or blank. Rows are
-matched to genotype FIDs/IIDs.
-
-### What does SPA<sub>SQR</sub> do with missing phenotype values?
-
-For each trait independently, SPA<sub>SQR</sub> drops the subjects
-with missing $Y$ and refits the null model on the non-missing scope.
-Multi-trait jobs are not penalized — a subject missing trait 1 still
-contributes to trait 2.
+For phenotype / covariate file format and missing-value handling, see
+[Data input and missing values](#data-input-and-missing-values) above.
 
 ### How are multi-allelic variants handled?
 

@@ -29,4 +29,4 @@ The pipeline is:
 4. **(Optional) Effect-size estimation** via `--spasqr-mode wald`.
 
 See the documentation site for installation, command-line reference,
-input/output formats, power-improving strategies, and FAQ.
+input/output formats, and FAQ.
