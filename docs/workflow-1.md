@@ -35,7 +35,7 @@ S00001  S00001  0     0.0065558   -0.0190989  0.00331922   0.00574267  0.4476112
 S00002  S00002  1     0.00947819  -0.0120386  -0.0226929   0.0132888   -1.28469274    0.626376502
 ```
 
-A single file may carry both phenotype and covariate columns (as here), or the two may live in separate files supplied through `--pheno` and `--covar`. GRAB also accepts a single `IID` key column in place of the `FID IID` pair; however, LDAK-KVIK and REGENIE require the `FID IID` pair. The bundled `simu_geno.*` PLINK1 file set in this tutorial is a simulated 5000-subject × 5000-variant × 22-autosome data set (1250 families × 4 individual per family). `Quantitative1` and `Quantitative2` in the phenotype file carry genuine polygenic signals (heritability ≈ 0.30, 500 causal SNPs per trait). All input files are available in the [`data/`](https://github.com/qhengncsu/SPAsqr.github.io/tree/main/data) folder of this documentation repository; download them to replicate this tutorial.
+A single file may carry both phenotype and covariate columns (as here), or the two may live in separate files supplied through `--pheno` and `--covar`. GRAB also accepts a single `IID` key column in place of the `FID IID` pair; however, LDAK-KVIK and REGENIE require the `FID IID` pair. The bundled `simu_geno.*` PLINK 1 file set in this tutorial is a simulated 5000-subject × 5000-variant × 22-autosome data set (1250 families × 4 individual per family). `Quantitative1` and `Quantitative2` in the phenotype file carry genuine polygenic signals (heritability ≈ 0.30, 500 causal SNPs per trait). All input files are available in the [`data/`](https://github.com/qhengncsu/SPAsqr.github.io/tree/main/data) folder of this documentation repository; download them to replicate this tutorial.
 
 In what follows, we run QR GWAS for the two quantitative traits `Quantitative1` and `Quantitative2`, adjusting for the covariates `MALE`, `PC1`, `PC2`, `PC3`, `PC4`. GRAB automatically adds an intercept to the covariate matrix, so there is no need to include one in the phenotype file. For simplicity, the same `simu_geno.{bed,bim,fam}` fileset is used for both LOCO PGS construction and SPA<sub>SQR</sub> association testing. In practice, the two stages may use different variant subsets: LOCO PGS is usually trained on directly genotyped (unimputed) variants — a few hundred thousand high-quality SNPs — since imputed variants slow down PGS construction without materially improving the accuracy of the LOCO PGS. Association testing, by contrast, is run on the full imputed dataset (millions of variants, including rare ones) to maximize discovery.
 
@@ -167,7 +167,7 @@ Below are the required and optional flags.
 | Flag | What it does |
 | --- | --- |
 | `--method` | Selects the GRAB method to run; use `SPAsqr` to trigger SPA<sub>SQR</sub> and all of the `--spasqr-*` options below. |
-| `--bfile` | PLINK1 genotype file set prefix (e.g. `simu_geno` for `simu_geno.{bed,bim,fam}`). PLINK 2 (`--pfile`), VCF (`--vcf`), and BGEN (`--bgen`) are also accepted — exactly one of the four is needed. |
+| `--bfile` | PLINK 1 genotype file set prefix (e.g. `simu_geno` for `simu_geno.{bed,bim,fam}`). PLINK 2 (`--pfile`), VCF (`--vcf`), and BGEN (`--bgen`) are also accepted — exactly one of the four is needed. |
 | `--pheno` | Phenotype file (e.g. `simu_geno_int.txt`). Starts with `FID IID` (or `IID`). `#FID #IID` and `#IID` also works. |
 | `--out` | Output prefix (e.g. `spasqr_results`). Each trait gets its own tab-delimited result file. |
 
