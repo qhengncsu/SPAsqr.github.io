@@ -1,12 +1,12 @@
 ---
 layout: default
-title: "LDAK-KVIK Step 1 performs better one-trait-at-a-time"
+title: "LDAK-KVIK Step 1 runs faster one-trait-at-a-time"
 nav_order: 5
 description: "For many phenotypes: build LOCO PGS one trait at a time in parallel, then run SPAsqr over all traits at once."
 has_children: false
 ---
 
-# **LDAK-KVIK Step 1 performs better one-trait-at-a-time**
+# **LDAK-KVIK Step 1 runs faster one-trait-at-a-time**
 
 [Workflow 1]({{ site.baseurl }}/docs/workflow-1.html) and [Workflow 2]({{ site.baseurl }}/docs/workflow-2.html) analyze all available traits in a single command (all-traits-at-once). For LOCO PGS construction, however, **LDAK-KVIK Step 1** is in fact more efficiently run **one trait per process**: $N$ single-threaded processes in parallel is more computationally efficient than using one $N$-threaded call to analyze all $N$ traits. **SPA<sub>SQR</sub>** is the opposite — a single multi-trait call is typically much faster, mostly owing to **shared I/O**: the genotypes are read into memory only once and reused across different traits.
 
