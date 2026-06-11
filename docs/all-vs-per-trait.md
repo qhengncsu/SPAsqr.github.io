@@ -1,29 +1,20 @@
 ---
 layout: default
-title: "All-traits-at-once vs one-trait-at-a-time"
+title: "LDAK-KVIK Step 1 performs better one-trait-at-a-time"
 nav_order: 5
-description: "The fastest recipe for many phenotypes: build LOCO PGS one trait at a time in parallel, then run SPAsqr over all traits at once."
+description: "For many phenotypes: build LOCO PGS one trait at a time in parallel, then run SPAsqr over all traits at once."
 has_children: false
 ---
 
-# **All-traits-at-once vs one-trait-at-a-time**
+# **LDAK-KVIK Step 1 performs better one-trait-at-a-time**
 
-[Workflow 1]({{ site.baseurl }}/docs/workflow-1.html) and [Workflow 2]({{ site.baseurl }}/docs/workflow-2.html) analyze multiple traits in a single LDAK-KVIK / REGENIE / GRAB call. This **all-traits-at-once** style is the simplest possible recipe to use our software, and is good enough when we are analyzing just a handful of phenotypes.
+[Workflow 1]({{ site.baseurl }}/docs/workflow-1.html) and [Workflow 2]({{ site.baseurl }}/docs/workflow-2.html) analyze all available traits in a single command (all-traits-at-once). For LOCO PGS construction, however, **LDAK-KVIK Step 1** is in fact more efficiently run **one trait per process**: $N$ single-threaded processes in parallel is more computationally efficient than using one $N$-threaded call to analyze all $N$ traits. **SPA<sub>SQR</sub>** is the opposite — a single multi-trait call is typically much faster, mostly owing to **shared I/O**: the genotypes are read into memory only once and reused across different traits.
 
-When analyzing dozens or even hundreds of phenotypes, the fastest recipe is a **hybrid** that treats the two stages differently:
-
-- **LOCO PGS construction** (LDAK-KVIK Step 1) is fastest run **one trait at a time**, as many single-threaded processes in parallel.
-- **SPA<sub>SQR</sub> association testing** is fastest run **all traits at once**, in a single multi-threaded call.
-
-So we build the LOCO PGS per trait in parallel, assemble one combined prediction list, and then run SPA<sub>SQR</sub> once over all traits.
-
-## LDAK-KVIK Step 1 performs better one-trait-at-a-time
-
-LDAK-KVIK Step 1 is more efficient run one trait at a time: $N$ single-threaded processes in parallel beat one $N$-threaded multi-trait call. SPA<sub>SQR</sub> is the opposite — a single all-traits call streams the genotypes only once and shares that work across every trait, so it beats launching a separate SPA<sub>SQR</sub> process per trait.
+This page therefore illustrates computing the LDAK-KVIK LOCO PGS using a separate process for each trait. We then assemble the computed PGS into a single prediction list to pass to GRAB.
 
 ## Prepare the shared inputs
 
-A single one-time step produces the file the launcher assumes — the INT-transformed phenotype `simu_geno_int.txt`:
+Again, we first generate the INT-transformed phenotype `simu_geno_int.txt`:
 
 ```bash
 # INT-transform every trait once (all columns in a single call)
@@ -31,11 +22,9 @@ A single one-time step produces the file the launcher assumes — the INT-transf
         --out simu_geno_int
 ```
 
-For related cohorts you can additionally supply a sparse GRM via `--sp-grm-plink2`; see [Workflow 2]({{ site.baseurl }}/docs/workflow-2.html).
-
 ## Build the LOCO PGS for every trait in parallel
 
-This snippet reads the trait list from the phenotype-file header, launches one single-threaded LDAK-KVIK Step 1 per trait **all at once** in the background, waits for them to finish, then assembles a single prediction list:
+The following bash snippet reads the trait list from the phenotype-file header, launches a single-threaded LDAK-KVIK Step 1 for each trait.  The single-threaded processes run simultaneously in the background. We assemble the prediction list after all step 1 calls are finished.
 
 ```bash
 #!/usr/bin/env bash
@@ -61,9 +50,9 @@ for trait in $TRAITS; do
 done
 ```
 
-Every trait runs as its own single-threaded process, and the operating-system scheduler spreads those processes across the node's cores; each failure lands in its own `log.ldak.${trait}`. The trailing `wait` ensures every LOCO PGS is on disk before the prediction list is assembled.
+Every trait runs as its own single-threaded process, and the operating-system scheduler spreads those processes across the node's cores. The trailing `wait` ensures every LOCO PGS is on disk before the prediction list is assembled.
 
-## Run SPA<sub>SQR</sub> over all traits at once
+## Run SPA<sub>SQR</sub> for all traits
 
 ```bash
 ./grab2 --method SPAsqr \
@@ -77,11 +66,4 @@ Every trait runs as its own single-threaded process, and the operating-system sc
     --out spasqr_results
 ```
 
-Omitting `--pheno-name` makes SPA<sub>SQR</sub> analyze every trait column in `--pheno`; give it as many `--threads` as the node has cores.
-
-## When to prefer which mode
-
-| Setting | Recommended recipe |
-| ------- | ---------------- |
-| A handful of traits | **All-traits-at-once** for both stages ([Workflow 1]({{ site.baseurl }}/docs/workflow-1.html), [Workflow 2]({{ site.baseurl }}/docs/workflow-2.html)) — simplest, no script plumbing. |
-| Dozens to hundreds of traits | **Per-trait LOCO PGS in parallel + one all-traits SPA<sub>SQR</sub> call**, as on this page. |
+Omitting `--pheno-name` makes SPA<sub>SQR</sub> analyze every trait column in `--pheno`; `--threads` should not exceed the number of available cores on the machine. Thread contention can slow down the program significantly.
