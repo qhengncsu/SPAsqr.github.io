@@ -58,4 +58,4 @@ For each requested $\tau$:
 - `Z_tau<val>` and `P_tau<val>` — Wald Z-score and two-sided $p$-values obtained via normal approximation.
 
 
-Wald mode defaults to a narrower bandwidth than score mode (`--spasqr-h-scale 10` vs `3`) to keep smoothing bias low at the cost of slightly slower convergence; override via `--spasqr-h-scale <k>` when desired.
+Wald mode defaults to a narrower bandwidth than score mode (`--spasqr-h-scale 5` vs `3`) to keep smoothing bias low at the cost of slightly slower convergence; override via `--spasqr-h-scale <k>` when desired.

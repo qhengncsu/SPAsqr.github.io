@@ -22,7 +22,7 @@ The pipeline is:
 3. **Steps 1–2 — Run `grab --method SPAsqr`.** Reads phenotype +
    covariates, subtracts the chromosome-specific LOCO PGS as an offset,
    fits the null SQR model per chromosome with bandwidth
-   `h = IQR(Y - PGS) / k`, applies SPA in the tails, and writes
+   `h = IQR(Y - PGS) / k` (default `k = 3`; `--spasqr-h-scale`), applies SPA in the tails, and writes
    per-phenotype results with per-tau p-values, Z-scores, and a
    Cauchy-combined P_CCT.
 

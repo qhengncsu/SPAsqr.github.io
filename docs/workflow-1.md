@@ -181,7 +181,7 @@ Below are the required and optional flags.
 | `--covar` | — | Covariate file. Starts with `FID IID` (or `IID`). `#FID #IID` and `#IID` also works. May point to the same file as `--pheno`. |
 | `--covar-name` | — | Comma-separated list of covariate columns (e.g. `MALE,PC1,PC2,PC3,PC4`). |
 | `--spasqr-taus` | `0.1,0.3,0.5,0.7,0.9` | Quantile levels at which to test, comma-separated (max 20 levels). |
-| `--spasqr-h-scale` | `3` (score mode) | Bandwidth divisor. Larger value → less smoothing. |
+| `--spasqr-h-scale` | `3` (score) / `5` (wald) | Bandwidth divisor (`h = IQR / k`). Larger value → less smoothing. |
 | `--threads` | `1` | Number of threads used for parallel computing (e.g. `8`). |
 
 **SNP filters:**
