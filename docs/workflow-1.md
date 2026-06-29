@@ -228,7 +228,7 @@ Z_tau0.1  Z_tau0.2  Z_tau0.3  Z_tau0.4  Z_tau0.5  Z_tau0.6  Z_tau0.7  Z_tau0.8  
 -5.51     -4.92     -4.78     -4.66     -4.70     -4.74     -4.75     -4.75     -4.84
 ```
 
-Columns 29–37 — per-quantile **raw** normal-approximation $Z$-scores `Z_Norm_tau0.1 … Z_Norm_tau0.9`. `Z_Norm_tau` is the original score statistic over its standard error, $S/\sqrt{\widehat{\operatorname{Var}}(S)}$, **before** the saddlepoint correction. The `Z_tau` columns above are instead made consistent with the saddlepoint $p$-value. For common variants the two are virtually identical (e.g. `SNP_1428` here: `Z_tau0.9 = +4.44` vs `Z_Norm_tau0.9 = +4.43`); they differ for rare variants, where the saddlepoint approximation has a more clear impact.
+Columns 29–37 — per-quantile **raw** normal-approximation $Z$-scores `Z_Norm_tau0.1 … Z_Norm_tau0.9`. `Z_Norm_tau` is the original score statistic over its standard error, $S/\sqrt{\operatorname{Var}(S)}$, **before** the saddlepoint correction. The `Z_tau` columns above are instead made consistent with the saddlepoint $p$-value. For common variants the two are virtually identical (e.g. `SNP_1428` here: `Z_tau0.9 = +4.44` vs `Z_Norm_tau0.9 = +4.43`); they differ for rare variants, where the saddlepoint approximation has a more clear impact.
 
 ### End-to-end recipes (with INT)
 
