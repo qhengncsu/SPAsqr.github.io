@@ -202,7 +202,7 @@ spasqr_results.Quantitative1.SPAsqr
 spasqr_results.Quantitative2.SPAsqr
 ```
 
-Each file has one row per variant and 28 columns (if we use quantiles 0.1, 0.2, ..., 0.9). 
+Each file has one row per variant. With nine quantiles it has 37 columns: 10 fixed leading columns, followed by three per-quantile blocks of nine columns each — `P_tau`, `Z_tau`, and `Z_Norm_tau` (10 + 3 × 9 = 37). In general the width is `10 + 3 × n_taus`. 
 
 Columns 1–10 — variant info, QC fields, and the combined $p$-value `P_CCT`:
 
@@ -220,7 +220,7 @@ P_tau0.1   P_tau0.2   P_tau0.3   P_tau0.4   P_tau0.5   P_tau0.6   P_tau0.7   P_t
 3.62e-08   8.94e-07   1.83e-06   3.21e-06   2.77e-06   2.20e-06   2.06e-06   2.05e-06   1.27e-06
 ```
 
-Columns 20–28 — per-quantile $Z$-scores (signed), same $\tau$ order:
+Columns 20–28 — per-quantile signed $Z$-scores `Z_tau`, made consistent with the saddlepoint $p$-value (same $\tau$ order):
 
 ```
 Z_tau0.1  Z_tau0.2  Z_tau0.3  Z_tau0.4  Z_tau0.5  Z_tau0.6  Z_tau0.7  Z_tau0.8  Z_tau0.9
@@ -228,7 +228,9 @@ Z_tau0.1  Z_tau0.2  Z_tau0.3  Z_tau0.4  Z_tau0.5  Z_tau0.6  Z_tau0.7  Z_tau0.8  
 -5.51     -4.92     -4.78     -4.66     -4.70     -4.74     -4.75     -4.75     -4.84
 ```
 
-`P_CCT` is the main result: the nine per-$\tau$ $p$-values combined into one via the Cauchy combination test. The `P_tauX` and `Z_tauX` columns elucidate which quantiles the signal is coming from.
+Columns 29–37 — per-quantile **raw** normal-approximation $Z$-scores `Z_Norm_tau0.1 … Z_Norm_tau0.9` (same $\tau$ order). `Z_Norm_tau` is the uncalibrated score statistic over its standard error, $S/\sqrt{\widehat{\operatorname{Var}}(S)}$ — the $Z$ from a plain normal approximation, **before** the saddlepoint correction. The `Z_tau` columns above are instead made consistent with the saddlepoint $p$-value via `Z_tau = sign(Z_Norm_tau) × Φ⁻¹(1 − P_tau/2)`. For common variants the two are virtually identical (e.g. `SNP_1428` here: `Z_tau0.9 = +4.44` vs `Z_Norm_tau0.9 = +4.43`); they separate for rare variants and in the extreme tails, where the saddlepoint correction does real work.
+
+`P_CCT` is the main result: the nine per-$\tau$ $p$-values combined into one via the Cauchy combination test. The `P_tau`, `Z_tau`, and `Z_Norm_tau` columns elucidate which quantiles the signal is coming from.
 
 ### End-to-end recipes (with INT)
 

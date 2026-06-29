@@ -2,13 +2,13 @@
 layout: default
 title: Effect-size estimation
 nav_order: 6
-description: "Per-marker, per-tau γ̂_τ and SE via SPAsqr Wald mode."
+description: "Per-marker, per-tau γ̂(τ) and SE via SPAsqr Wald mode."
 has_children: false
 ---
 
 # **Effect-size estimation — `--spasqr-mode wald`**
 
-The default mode of SPA<sub>SQR</sub> **genome-wide screening**: it tests $H_0: \gamma_\tau = 0$ at every $\tau$ in a score testing framework,  where a single null-model is fit for each chromosome and quantile. It provides calibrated $p$-values and signed $Z$-scores per marker. However, it does **not** provide effect size estimation. If we are interested in the effect size estimates on a small candidate SNP list (top GWAS hits, prior-literature variants), GRAB provides the following **Wald mode**. 
+The default mode of SPA<sub>SQR</sub> **genome-wide screening**: it tests $H_0: \gamma(\tau) = 0$ at every $\tau$ in a score testing framework,  where a single null-model is fit for each chromosome and quantile. It provides calibrated $p$-values and signed $Z$-scores per marker. However, it does **not** provide effect size estimation. If we are interested in the effect size estimates on a small candidate SNP list (top GWAS hits, prior-literature variants), GRAB provides the following **Wald mode**. 
 
 ## Example
 
@@ -41,7 +41,7 @@ We may estimate the effect sizes for those variants on `Quantitative1,Quantitati
      --out spasqr_effect
 ```
 
-The outputs `spasqr_effect.Quantitative1.SPAsqr` and `spasqr_effect.Quantitative2.SPAsqr` share the score-mode output format, with two additional columns per $\tau$:
+The outputs `spasqr_effect.Quantitative1.SPAsqr` and `spasqr_effect.Quantitative2.SPAsqr` reuse the score-mode columns through `Z_tau*` (Wald mode omits the `Z_Norm_tau*` columns), then append two columns per $\tau$ — so with nine quantiles each file has 46 columns:
 
 ```
 CHROM  POS  ID  REF  ALT  MISS_RATE  ALT_FREQ  MAC  HWE_P  P_CCT
