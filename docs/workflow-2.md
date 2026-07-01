@@ -174,9 +174,9 @@ Pass it to SPA<sub>SQR</sub> exactly like the PLINK 2 GRM, just with the other f
 
 The sparse GRM is purely a variance-calibration device: omitting it does not change the score statistic itself, only its reference distribution. It can be omitted when the study cohort has an objectively low degree of relatedness, and the GWAS results will be mostly similar.
 
-It is suitable to use PLINK2 or GCTA to compute the sparse GRM when the population is relatively homogeneous. Unfortunately, we caution that it is well-known that a GCTA-style sparse GRM can be highly inaccurate when computed from genotypes of admixed individuals or when the participants are from multiple ancestries. In that case, the GRM is confounded with population structure, with far too many entries exceeding 0.05. 
+It is suitable to use PLINK2 or GCTA to compute the sparse GRM when the population is relatively homogeneous. Unfortunately, we caution that it is well-known that a GCTA-style sparse GRM can be highly inaccurate when computed from genotypes of admixed individuals or when the participants are from multiple ancestries. In that case, the GRM is confounded with population structure, with many, many entries exceeding 0.05 (far too many :(). 
 
-- For admixed cohorts with **low** relatedness, simply omit the GRM (drop both `--sp-grm-*` flags): SPA<sub>SQR</sub> then uses an identity $\Psi$. In other words, use workflow 1!
-- For cohorts that are both **admixed and highly related** (a rare combination, but the Mexico City Prospective Study is such an example), compute an **ancestry-aware** sparse GRM with the [FastSparseGRM](https://github.com/rounakdey/FastSparseGRM) R package. After computing the sparse GRM, generate a GRM file with header "IID1 IID2 VALUE" and pass to GRAB via --sp-grm-grab. 
+- For admixed cohorts with **low** relatedness, simply omit the GRM (drop both `---sp-grm-*` flags): SPA<sub>SQR</sub> then uses an identity GRM. In other words, use workflow 1!
+- For cohorts that are both **admixed and highly related** (a rare combination, but the Mexico City Prospective Study is such an example), compute an **ancestry-aware** sparse GRM with the [FastSparseGRM](https://github.com/rounakdey/FastSparseGRM) R package. After computing the sparse GRM, generate a GRM file (like simu_geno.grm.grab) with header "IID1 IID2 VALUE" and pass to GRAB via `---sp-grm-grab`. 
 
 
