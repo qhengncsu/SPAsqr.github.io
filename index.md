@@ -30,17 +30,17 @@ binary — a single C++ executable that runs on Linux, macOS, and Windows.
 - **Calibrated for rare variants** — saddlepoint approximation keeps
   $p$-values accurate for rare variants.
 - **Handles relatedness** — uses LOCO polygenic scores as an offset, with
-  an optional sparse genetic relationship matrix for variance calibration.
+  an optional sparse genetic relationship matrix for further variance calibration.
 - **More power from smoothing** — convolution-smoothed QR lowers
-  variance, beating non-smooth QR in association power.
+  variance, offering greater association power than non-smooth QR.
 - **Biobank-scale speed** — multithreaded C++ implementation that rivals REGENIE and
   LDAK-KVIK in efficiency.
 
-![SPASQR association results for LDL direct in UK Biobank](docs/assets/images/ldl_panelc.png)
+![SPASQR association results for glucose in UK Biobank](docs/assets/images/glu_combined_leadb.png)
 
 ## Pipeline
 
-1. **Workflow 1 — LOCO PGS + SPA<sub>SQR</sub>.** Train chromosome-specific
+1. **Workflow 1 — LOCO PGS + SPA<sub>SQR</sub>.** Train 
    LOCO polygenic scores with
    [LDAK-KVIK](https://dougspeed.com/ldak-kvik/) or
    [REGENIE](https://rgcgithub.github.io/regenie/), then run
@@ -50,7 +50,7 @@ binary — a single C++ executable that runs on Linux, macOS, and Windows.
 2. **Workflow 2 — LOCO PGS + GRM + SPA<sub>SQR</sub>.** In addition to the
    LOCO PGS, build a sparse genetic relationship matrix using
    [PLINK 2](https://www.cog-genomics.org/plink/2.0/), and pass it via `--sp-grm-plink2` so that the
-   score-statistic variance is relatedness aware. Recommended for
+   score-statistic variance takes relatedness into account. Recommended for
    cohorts with strong relatedness.
 
 3. **(Optional) Effect-size estimation.** Re-run with
@@ -58,9 +58,9 @@ binary — a single C++ executable that runs on Linux, macOS, and Windows.
 
 ## Where to go next
 
-- [Installation]({{ site.baseurl }}/docs/installation.html) — building the GRAB binary.
+- [Installation]({{ site.baseurl }}/docs/installation.html) 
 - [Workflow 1: LOCO PGS + SPA<sub>SQR</sub>]({{ site.baseurl }}/docs/workflow-1.html)
 - [Workflow 2: LOCO PGS + GRM + SPA<sub>SQR</sub>]({{ site.baseurl }}/docs/workflow-2.html)
-- [All-traits-at-once vs one-trait-at-a-time]({{ site.baseurl }}/docs/all-vs-per-trait.html) — scaling SPA<sub>SQR</sub> to hundreds of phenotypes.
-- [Effect-size estimation]({{ site.baseurl }}/docs/effect-size-estimation.html) — Wald mode.
+- [LDAK-KVIK runs faster one-trait-at-a-time]({{ site.baseurl }}/docs/all-vs-per-trait.html) 
+- [Effect-size estimation]({{ site.baseurl }}/docs/effect-size-estimation.html) 
 - [FAQ]({{ site.baseurl }}/docs/faq.html)

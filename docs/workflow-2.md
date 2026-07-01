@@ -140,8 +140,43 @@ REGENIE LOCO PGS + sparse GRM, with INT:
     --out spasqr_results
 ```
 
-## When GRM should be used and when it shouldn't
+## Another GRM input mode: `--sp-grm-grab`
 
-The sparse GRM is purely a variance-calibration device: omitting it does not change the score statistic itself, only its reference distribution. It can be omitted when the study cohort has an objectively low degree of relatedness.
+Besides `--sp-grm-plink2`, GRAB accepts a sparse GRM through a second mode, `--sp-grm-grab`, which reads a single ID-keyed text file. This is a distinct input mode of GRAB — not the output format of any particular GRM tool. 
 
-It is suitable to use the sparse GRM when the population is relatively homogeneous and relatedness is high. On the other hand, we caution that it is well-known that the GRM can be highly inaccurate when computed from genotypes spanning multiple ancestries; we therefore also advise against using this feature when the population is heterogeneous. 
+```
+$ head simu_geno.grm.grab
+IID1    IID2     VALUE
+IID_0   IID_0   1.0024
+IID_1   IID_1   0.9981
+IID_3   IID_0   0.5012      
+IID_4   IID_3   0.2503     
+```
+
+- Three tab-delimited columns with the header `IID1  IID2  VALUE`.
+- One row per retained (non-zero) entry, **including the diagonal**; all unlisted pairs are treated as zero.
+- `IID1`/`IID2` are the sample **IIDs** (matching the `.fam` file). No 0-based indices and no companion `.grm.id` are needed — unlike the `--sp-grm-plink2` mode.
+
+Pass it to SPA<sub>SQR</sub> exactly like the PLINK 2 GRM, just with the other flag:
+
+```bash
+./grab2 --method SPAsqr \
+    --bfile simu_geno \
+    --pheno simu_geno_int.txt --pheno-name Quantitative1,Quantitative2 \
+    --covar simu_geno.pheno   --covar-name MALE,PC1,PC2,PC3,PC4 \
+    --pred-list simu_geno_ldak_pred.list \
+    --sp-grm-grab simu_geno.grm.grab \
+    --out spasqr_results
+```
+
+
+## Caveat of using a sparse GRM
+
+The sparse GRM is purely a variance-calibration device: omitting it does not change the score statistic itself, only its reference distribution. It can be omitted when the study cohort has an objectively low degree of relatedness, and the GWAS results will be mostly similar.
+
+It is suitable to use PLINK2 or GCTA to compute the sparse GRM when the population is relatively homogeneous. Unfortunately, we caution that it is well-known that a GCTA-style sparse GRM can be highly inaccurate when computed from genotypes of admixed individuals or when the participants are from multiple ancestries. In that case, the GRM is confounded with population structure, with far too many entries exceeding 0.05. 
+
+- For admixed cohorts with **low** relatedness, simply omit the GRM (drop both `--sp-grm-*` flags): SPA<sub>SQR</sub> then uses an identity $\Psi$. In other words, use workflow 1!
+- For cohorts that are both **admixed and highly related** (a rare combination, but the Mexico City Prospective Study is such an example), compute an **ancestry-aware** sparse GRM with the [FastSparseGRM](https://github.com/rounakdey/FastSparseGRM) R package. After computing the sparse GRM, generate a GRM file with header "IID1 IID2 VALUE" and pass to GRAB via --sp-grm-grab. 
+
+
