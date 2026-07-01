@@ -8,11 +8,11 @@ has_children: false
 
 # **Effect-size estimation — `--spasqr-mode wald`**
 
-The default mode of SPA<sub>SQR</sub> **genome-wide screening**: it tests $H_0: \gamma(\tau) = 0$ at every $\tau$ in a score testing framework,  where a single null-model is fit for each chromosome and quantile. It provides calibrated $p$-values and signed $Z$-scores per marker. However, it does **not** provide effect size estimation. If we are interested in the effect size estimates on a small candidate SNP list (top GWAS hits, prior-literature variants), GRAB provides the following **Wald mode**. 
+SPA<sub>SQR</sub>'s default mode is **genome-wide screening**: it tests $H_0: \gamma(\tau) = 0$ at every $\tau$ with a score test, fitting one null model per chromosome and quantile. It gives calibrated $p$-values and signed $Z$-scores per marker, but **not** effect-size estimates. To estimate effect sizes for a list of SNPs, use **Wald mode**.
 
 ## Example
 
-The user prepares a plain-text file (here `simu_geno_wald_extract`) listing one variant ID per line — typically the genome-wide-significant hits from the score-mode output, or a curated list from prior literature. This documentation repository provides an 8-variant example list at [`data/simu_geno_wald_extract`](https://github.com/qhengncsu/SPAsqr.github.io/tree/main/data):
+Prepare a plain-text file (`simu_geno_wald_extract`) with one variant ID per line — typically the genome-wide-significant hits from score mode, or a curated list. An 8-variant example is at [`data/simu_geno_wald_extract`](https://github.com/qhengncsu/SPAsqr.github.io/tree/main/data):
 
 ```
 $ cat simu_geno_wald_extract
@@ -41,7 +41,7 @@ We may estimate the effect sizes for those variants on `Quantitative1,Quantitati
      --out spasqr_effect
 ```
 
-The outputs `spasqr_effect.Quantitative1.SPAsqr` and `spasqr_effect.Quantitative2.SPAsqr` reuse the score-mode columns through `Z_tau*` (Wald mode omits the `Z_Norm_tau*` columns), then append two columns per $\tau$ — so with nine quantiles each file has 46 columns:
+The outputs `spasqr_effect.Quantitative1.SPAsqr` and `spasqr_effect.Quantitative2.SPAsqr`. With nine quantiles each file has 46 columns:
 
 ```
 CHROM  POS  ID  REF  ALT  MISS_RATE  ALT_FREQ  MAC  HWE_P  P_CCT
@@ -53,7 +53,7 @@ SE_tau0.1   ...  SE_tau0.9
 
 For each requested $\tau$:
 
-- `BETA_tau<val>` — the estimated effect size at quantile $\tau$, on the pheno-transform scale (e.g. INT scale under `--pheno-transform int`).
+- `BETA_tau<val>` — the estimated effect size at quantile $\tau$, on the transformed scale (e.g. INT scale under `--pheno-transform int`).
 - `SE_tau<val>` — standard error of `BETA_tau<val>`.
 - `Z_tau<val>` and `P_tau<val>` — Wald Z-score and two-sided $p$-values obtained via normal approximation.
 

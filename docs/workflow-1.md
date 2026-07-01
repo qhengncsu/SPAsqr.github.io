@@ -8,7 +8,7 @@ has_children: false
 
 # **Workflow 1: LOCO PGS + SPA<sub>SQR</sub>**
 
-In this section we offer a tutorial on how to run SPA<sub>SQR</sub> association testing using **leave-one-chromosome-out (LOCO) polygenic scores (PGS)** as an offset. LOCO PGS are per-subject predictions of the trait built from variants on every chromosome *except* the one currently being tested. SPA<sub>SQR</sub> subtracts the chromosome-specific LOCO PGS from the trait before fitting the null smoothed quantile regression model. Absorbing the LOCO PGS as an offset removes the polygenic background driven by other chromosomes, which controls for relatedness and substantially improves the statistical power of the per-variant score tests.
+We run SPA<sub>SQR</sub> association testing with **leave-one-chromosome-out (LOCO) polygenic scores (PGS)** as an offset. LOCO PGS are per-subject trait predictions built from every chromosome *except* the one being tested. SPA<sub>SQR</sub> subtracts the chromosome-specific LOCO PGS from the trait before fitting the null smoothed QR model. This removes the polygenic background from other chromosomes, which controls for relatedness and substantially improves the statistical power of the per-variant score tests.
 
 Although SPA<sub>SQR</sub> is a quantile GWAS method, LOCO PGS computed using linear GWAS software work very well for our purpose. We therefore outsource the task of PGS construction to either [**LDAK-KVIK**](https://dougspeed.com/ldak-kvik/) or [**REGENIE**](https://rgcgithub.github.io/regenie/).
 
@@ -35,9 +35,9 @@ S00001  S00001  0     0.0065558   -0.0190989  0.00331922   0.00574267  0.4476112
 S00002  S00002  1     0.00947819  -0.0120386  -0.0226929   0.0132888   -1.28469274    0.626376502
 ```
 
-A single file may carry both phenotype and covariate columns (as here), or the two may live in separate files supplied through `--pheno` and `--covar`. GRAB also accepts a single `IID` key column in place of the `FID IID` pair; however, LDAK-KVIK and REGENIE require the `FID IID` pair. The bundled `simu_geno.*` PLINK 1 file set in this tutorial is a simulated 5000-subject × 5000-variant × 22-autosome data set (1250 families × 4 individual per family). `Quantitative1` and `Quantitative2` in the phenotype file carry genuine polygenic signals (heritability ≈ 0.30, 500 causal SNPs per trait). All input files are available in the [`data/`](https://github.com/qhengncsu/SPAsqr.github.io/tree/main/data) folder of this documentation repository; download them to replicate this tutorial.
+GRAB also accepts a single `IID` key column in place of `FID IID`, but LDAK-KVIK and REGENIE require `FID IID`. The bundled `simu_geno.*` fileset is a simulated 5000-subject × 5000-variant × 22-autosome dataset (1250 families of 4); `Quantitative1` and `Quantitative2` carry real polygenic signal (heritability ≈ 0.30, 500 causal SNPs each). All inputs are in the [`data/`](https://github.com/qhengncsu/SPAsqr.github.io/tree/main/data) folder; download them to reproduce this tutorial.
 
-In what follows, we run QR GWAS for the two quantitative traits `Quantitative1` and `Quantitative2`, adjusting for the covariates `MALE`, `PC1`, `PC2`, `PC3`, `PC4`. GRAB automatically adds an intercept to the covariate matrix, so there is no need to include one in the phenotype file. For simplicity, the same `simu_geno.{bed,bim,fam}` fileset is used for both LOCO PGS construction and SPA<sub>SQR</sub> association testing. In practice, the two stages may use different variant subsets: LOCO PGS is usually trained on directly genotyped (unimputed) variants — a few hundred thousand high-quality SNPs — since imputed variants slow down PGS construction without materially improving the accuracy of the LOCO PGS. Association testing, by contrast, is run on the full imputed dataset (millions of variants, including rare ones) to maximize discovery.
+We run QR GWAS for `Quantitative1` and `Quantitative2`, adjusting for `MALE` and `PC1`–`PC4`; GRAB adds the intercept automatically, there is no need to explicitly add one in the phenotype file. For simplicity we use the same genotype file for both LOCO PGS construction and association testing. In practice the two stages usually use different variants: LOCO PGS is typically trained on directly genotyped SNPs (a few hundred thousand high-quality variants), while association testing uses the full imputed set (millions of variants, including rare ones) to maximize discovery.
 
 
 ## Inverse normal transformation
@@ -86,7 +86,8 @@ S00001  S00001  0.2954   0.3367   0.2901   0.2952        0.3047
 S00002  S00002  -0.3886  -0.4240  -0.3571  -0.4036       -0.4109
 ```
 
-For GRAB to utilize the computed LOCO PGS, we also need an intermediate file called a **prediction list** — a two-column table pairing each phenotype name (column 1) with the absolute path to its LOCO PGS file (column 2). The prediction list is what GRAB reads (via the `--pred-list` argument) so that it knows which PGS file is paired with which trait. This file format mimics the workflow of REGENIE. The following bash snippet provides an example on how to create such a file. 
+GRAB reads the LOCO PGS through a **prediction list**: a two-column table pairing each phenotype name with the absolute path to its LOCO PGS file, passed via `--pred-list`. The format mimics REGENIE's design. We may manually
+create the prediction list via the following command:
 
 ```bash
 cat > simu_geno_ldak_pred.list <<EOF
@@ -131,7 +132,7 @@ FID_IID  S00001_S00001  S00002_S00002  S00003_S00003  S00004_S00004  ...
 4        -0.0156        -0.2151        -0.0762        -0.2677        ...
 ```
 
-GRAB auto-detects the format from each LOCO file's header and distinguishes whether the LOCO OGS file is produced by LDAK-KVIK or REGENIE.
+GRAB auto-detects the format from each LOCO file's header and distinguishes whether the LOCO PGS file is produced by LDAK-KVIK or REGENIE.
 Unlike LDAK-KVIK, REGENIE produces `simu_geno_regenie_pred.list` automatically, in the exact format `grab2 --pred-list` expects:
 
 ```
@@ -140,7 +141,7 @@ Quantitative1   /abs/path/to/simu_geno_regenie_1.loco
 Quantitative2   /abs/path/to/simu_geno_regenie_2.loco
 ```
 
-Therefore, we may directly use the prediction list generated by REGENIE instead of manually creating it.
+Therefore, we may directly use the prediction list generated by REGENIE without manually creating it.
 
 ## Running association testing with GRAB
 
@@ -176,7 +177,7 @@ Below are the required and optional flags.
 | Flag | Default | What it does |
 | --- | --- | --- |
 | `--pred-list` | — | Prediction list (e.g. `simu_geno_ldak_pred.list` for LDAK-KVIK or `simu_geno_regenie_pred.list` for REGENIE). Omit to run with no LOCO offset — valid but a lot less powerful. |
-| `--pheno-transform` | `int` | One of `int` / `standardize`. **Must match the transform used during PGS construction.** If `simu_geno_int.txt` is used to compute LOGO PGS, use `int`. With raw `simu_geno.pheno` fed to LDAK-KVIK or REGENIE, set this to `standardize`. |
+| `--pheno-transform` | `int` | One of `int` / `standardize`. **Must match the transform used during PGS construction.** If `simu_geno_int.txt` is used to compute LOCO PGS, use `int`. With raw `simu_geno.pheno` fed to LDAK-KVIK or REGENIE, set this to `standardize`. |
 | `--pheno-name` | all trait columns | Comma-separated list of trait columns to analyze (e.g. `Quantitative1,Quantitative2`). |
 | `--covar` | — | Covariate file. Starts with `FID IID` (or `IID`). `#FID #IID` and `#IID` also works. May point to the same file as `--pheno`. |
 | `--covar-name` | — | Comma-separated list of covariate columns (e.g. `MALE,PC1,PC2,PC3,PC4`). |

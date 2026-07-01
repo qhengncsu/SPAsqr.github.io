@@ -8,9 +8,9 @@ has_children: false
 
 # **LDAK-KVIK Step 1 runs faster one-trait-at-a-time**
 
-[Workflow 1]({{ site.baseurl }}/docs/workflow-1.html) and [Workflow 2]({{ site.baseurl }}/docs/workflow-2.html) analyze all available traits in a single command (all-traits-at-once). For LOCO PGS construction, however, **LDAK-KVIK Step 1** is in fact more efficiently run **one trait per process**: $N$ single-threaded processes in parallel is more computationally efficient than using one $N$-threaded call to analyze all $N$ traits. **SPA<sub>SQR</sub>** is the opposite — a single multi-trait call is typically much faster, mostly owing to **shared I/O**: the genotypes are read into memory only once and reused across different traits.
+[Workflow 1]({{ site.baseurl }}/docs/workflow-1.html) and [Workflow 2]({{ site.baseurl }}/docs/workflow-2.html) analyze all traits in a single command. However, we have found that **LDAK-KVIK Step 1** is faster run **one trait per process**: $N$ single-threaded processes in parallel beat one $N$-threaded call over all $N$ traits. **SPA<sub>SQR</sub>** is the opposite — one multi-trait call is usually much faster, mainly from **shared I/O**: genotypes are read once and reused across traits.
 
-This page therefore illustrates computing the LDAK-KVIK LOCO PGS using a separate process for each trait. We then assemble the computed PGS into a single prediction list to pass to GRAB.
+Here we illustrate computing the LDAK-KVIK LOCO PGS using a separate process for each trait, then assemble them into one prediction list to supply to GRAB.
 
 ## Prepare the shared inputs
 
@@ -24,7 +24,7 @@ Again, we first generate the INT-transformed phenotype `simu_geno_int.txt`:
 
 ## Build the LOCO PGS for every trait in parallel
 
-The following bash snippet reads the trait list from the phenotype-file header, launches a single-threaded LDAK-KVIK Step 1 for each trait.  The single-threaded processes run simultaneously in the background. We assemble the prediction list after all step 1 calls are finished.
+This snippet reads the trait list from the phenotype header and launches a single-threaded LDAK-KVIK Step 1 for each trait in the background, then assembles the prediction list once all finish.
 
 ```bash
 #!/usr/bin/env bash
@@ -50,7 +50,7 @@ for trait in $TRAITS; do
 done
 ```
 
-Every trait runs as its own single-threaded process, and the operating-system scheduler spreads those processes across the node's cores. The trailing `wait` ensures every LOCO PGS is on disk before the prediction list is assembled.
+Every trait runs as its own single-threaded process, and the operating-system scheduler spreads those processes across the machine's CPU cores. The trailing `wait` ensures every LOCO PGS is on disk before the prediction list is assembled.
 
 ## Run SPA<sub>SQR</sub> for all traits
 

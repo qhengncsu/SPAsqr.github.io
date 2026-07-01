@@ -27,7 +27,7 @@ Download the archive for your platform from the [GRAB Releases page](https://git
 
 ## External tools
 
-Our workflows call three external programs. In our opinion, the easiest way to install them are:
+Our workflows call three external programs. The easiest way to install them:
 
 - [**LDAK-KVIK**](https://dougspeed.com/ldak-kvik/) — download the prebuilt binary from the LDAK site.
 - [**REGENIE**](https://rgcgithub.github.io/regenie/) — `conda install -c conda-forge -c bioconda regenie`.

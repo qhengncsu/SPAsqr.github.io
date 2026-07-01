@@ -8,9 +8,9 @@ has_children: false
 
 # **Workflow 2: LOCO PGS + GRM + SPA<sub>SQR</sub>**
 
-When the study cohort has a relatively high degree of relatedness, incorporating the LOCO PGS as an offset alone does not ensure test calibration. More specifically, REGENIE LOCO PGS is typically less predictive of the phenotype than LDAK-KVIK LOCO PGS: using REGENIE LOCO PGS as an offset may fall short of completely eliminating type-I error inflation due to relatedness. On the other hand, using LDAK-KVIK LOCO PGS may result in deflated test statistics.
+When the cohort is highly related, the LOCO PGS offset alone may not calibrate the tests. REGENIE LOCO PGS is usually less predictive than LDAK-KVIK's, so it may not fully remove relatedness-driven type-I inflation; LDAK-KVIK LOCO PGS may instead deflate the test statistics.
 
-SPA<sub>SQR</sub> may leverage a **sparse genetic relationship matrix (GRM)** to calibrate the null variance of the score statistics in the presence of strong relatedness. Here we illustrate how to incorporate a sparse GRM into our workflow.
+SPA<sub>SQR</sub> may leverage a **sparse genetic relationship matrix (GRM)** to calibrate the null variance of the score statistics under strong relatedness. Here we show how to add one to the workflow.
 
 In addition to the files from [Workflow 1]({{ site.baseurl }}/docs/workflow-1.html) — `simu_geno.{bed,bim,fam}`, `simu_geno.pheno`, and the LOCO PGS prediction list `simu_geno_ldak_pred.list` (or `simu_geno_regenie_pred.list`) — Workflow 2 requires two additional files:
 
@@ -24,7 +24,7 @@ We pass the path of simu_geno.grm.sp to `--sp-grm-plink2` argument of GRAB. The 
 
 ## Computing the sparse GRM with PLINK 2
 
-GRM is a concept popularized by the [GCTA](https://yanglab.westlake.edu.cn/software/gcta/) software. However, using GCTA to compute the GRM has historically been relatively time-consuming. Since late 2025, [PLINK 2](https://www.cog-genomics.org/plink/2.0/) also supports sparse GRM computation, which is very simple and efficient to use:
+The GRM was popularized by [GCTA](https://yanglab.westlake.edu.cn/software/gcta/), but computing it there has historically been slow. Since late 2025, [PLINK 2](https://www.cog-genomics.org/plink/2.0/) also computes sparse GRMs, quickly and simply:
 
 ```bash
 ./plink2 \
@@ -54,7 +54,7 @@ Sample $i$, $j$ indices are **0-based** and correspond to the $i+1$-th and $j+1$
 
 ## SPA<sub>SQR</sub> association testing with GRM variance correction
 
-With the LOCO PGS prediction list from [Workflow 1]({{ site.baseurl }}/docs/workflow-1.html) and the sparse GRM in hand, we only need to add the `--sp-grm-plink2` flag to use GRM-aware variance in our association testing procedure:
+With the prediction list from [Workflow 1]({{ site.baseurl }}/docs/workflow-1.html) and the sparse GRM ready, just add `--sp-grm-plink2` for GRM-aware variance:
 
 ```bash
 ./grab2 --method SPAsqr \
@@ -143,9 +143,10 @@ REGENIE LOCO PGS + sparse GRM, with INT:
     --out spasqr_results
 ```
 
-## Another GRM input mode: `--sp-grm-grab`
+## Another GRM input mode: `---sp-grm-grab`
 
-Besides `--sp-grm-plink2`, GRAB accepts a sparse GRM through a second mode, `--sp-grm-grab`, which reads a single ID-keyed text file. This is a distinct input mode of GRAB — not the output format of any particular GRM tool. 
+Besides `--sp-grm-plink2`, GRAB accepts a generic sparse GRM through a second flag, `---sp-grm-grab`, which reads a single IID-keyed text file. This is designed for GRMs computed using tools other than PLINK 2. `---sp-grm-grab` expects the GRM
+file to take the following format:
 
 ```
 $ head simu_geno.grm.grab
@@ -157,10 +158,10 @@ IID_4   IID_3   0.2503
 ```
 
 - Three tab-delimited columns with the header `IID1  IID2  VALUE`.
-- One row per retained (non-zero) entry, **including the diagonal**; all unlisted pairs are treated as zero.
-- `IID1`/`IID2` are the sample **IIDs** (matching the `.fam` file). No 0-based indices and no companion `.grm.id` are needed — unlike the `--sp-grm-plink2` mode.
+- One row per related pair (if we have an entry 'IID_4   IID_3   0.2503', then there is no need to have a separate entry 'IID_3   IID_4   0.2503', GRAB automatically symmetrizes the GRM); the diagonal entries of the GRM should be included; all unlisted pairs are treated as zero.
+- `IID1`/`IID2` are the sample **IIDs** (matching the `.fam` file). No companion `.grm.id` needed — unlike the `--sp-grm-plink2` mode.
 
-Pass it to SPA<sub>SQR</sub> exactly like the PLINK 2 GRM, just with the other flag:
+Pass it to SPA<sub>SQR</sub> exactly like the PLINK 2 GRM, just with a different flag `---sp-grm-grab`:
 
 ```bash
 ./grab2 --method SPAsqr \
@@ -180,7 +181,7 @@ The sparse GRM is purely a variance-calibration device: omitting it does not cha
 
 It is suitable to use PLINK2 or GCTA to compute the sparse GRM when the population is relatively homogeneous. Unfortunately, we caution that it is well-known that a GCTA-style sparse GRM can be highly inaccurate when computed from genotypes of admixed individuals or when the participants are from multiple ancestries. In that case, the GRM is confounded with population structure, with many, many entries exceeding 0.05 (far too many :(). 
 
-- For admixed cohorts with **low** relatedness, simply omit the GRM (drop both `---sp-grm-*` flags): SPA<sub>SQR</sub> then uses an identity GRM. In other words, use workflow 1!
-- For cohorts that are both **admixed and highly related** (a rare combination, but the Mexico City Prospective Study is such an example), compute an **ancestry-aware** sparse GRM with the [FastSparseGRM](https://github.com/rounakdey/FastSparseGRM) R package. After computing the sparse GRM, generate a GRM file (like simu_geno.grm.grab) with header "IID1 IID2 VALUE" and pass to GRAB via `---sp-grm-grab`. 
+- For admixed cohorts with **low** relatedness, simply omit the GRM (avoid both `---sp-grm-*` flags): SPA<sub>SQR</sub> then uses an identity GRM. In other words, use workflow 1!
+- For cohorts that are both **admixed and highly related** (a rare combination, but the Mexico City Prospective Study is such an example), compute an **ancestry-aware** sparse GRM with the [FastSparseGRM](https://github.com/rounakdey/FastSparseGRM) R package. After computing the sparse GRM, generate a GRM file that mimics the format of simu_geno.grm.grab and pass to GRAB via `---sp-grm-grab`. 
 
 
