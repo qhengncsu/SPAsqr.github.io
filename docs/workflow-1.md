@@ -258,6 +258,7 @@ EOF
     --pheno simu_geno_int.txt --pheno-name Quantitative1,Quantitative2 \
     --covar simu_geno.pheno   --covar-name MALE,PC1,PC2,PC3,PC4 \
     --pred-list simu_geno_ldak_pred.list \
+    --threads 8 \
     --out spasqr_results
 ```
 
@@ -282,6 +283,7 @@ REGENIE LOCO PGS with INT:
     --pheno simu_geno_int.txt --pheno-name Quantitative1,Quantitative2 \
     --covar simu_geno.pheno   --covar-name MALE,PC1,PC2,PC3,PC4 \
     --pred-list simu_geno_regenie_pred.list \
+    --threads 8 \
     --out spasqr_results
 ```
 
@@ -314,6 +316,7 @@ EOF
     --covar simu_geno.pheno --covar-name MALE,PC1,PC2,PC3,PC4 \
     --pred-list simu_geno_ldak_pred.list \
     --pheno-transform standardize \
+    --threads 8 \
     --out spasqr_results
 ```
 
@@ -336,5 +339,6 @@ REGENIE LOCO PGS without INT:
     --covar simu_geno.pheno --covar-name MALE,PC1,PC2,PC3,PC4 \
     --pred-list simu_geno_regenie_pred.list \
     --pheno-transform standardize \
+    --threads 8 \
     --out spasqr_results
 ```

@@ -63,6 +63,7 @@ With the LOCO PGS prediction list from [Workflow 1]({{ site.baseurl }}/docs/work
     --covar simu_geno.pheno   --covar-name MALE,PC1,PC2,PC3,PC4 \
     --pred-list simu_geno_ldak_pred.list \
     --sp-grm-plink2 simu_geno.grm.sp \
+    --threads 8 \
     --out spasqr_results
 ```
 
@@ -104,6 +105,7 @@ EOF
     --covar simu_geno.pheno   --covar-name MALE,PC1,PC2,PC3,PC4 \
     --pred-list simu_geno_ldak_pred.list \
     --sp-grm-plink2 simu_geno.grm.sp \
+    --threads 8 \
     --out spasqr_results
 ```
 
@@ -137,6 +139,7 @@ REGENIE LOCO PGS + sparse GRM, with INT:
     --covar simu_geno.pheno   --covar-name MALE,PC1,PC2,PC3,PC4 \
     --pred-list simu_geno_regenie_pred.list \
     --sp-grm-plink2 simu_geno.grm.sp \
+    --threads 8 \
     --out spasqr_results
 ```
 
@@ -166,6 +169,7 @@ Pass it to SPA<sub>SQR</sub> exactly like the PLINK 2 GRM, just with the other f
     --covar simu_geno.pheno   --covar-name MALE,PC1,PC2,PC3,PC4 \
     --pred-list simu_geno_ldak_pred.list \
     --sp-grm-grab simu_geno.grm.grab \
+    --threads 8 \
     --out spasqr_results
 ```
 
