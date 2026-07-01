@@ -61,6 +61,6 @@ binary — a single C++ executable that runs on Linux, macOS, and Windows.
 - [Installation]({{ site.baseurl }}/docs/installation.html) 
 - [Workflow 1: LOCO PGS + SPA<sub>SQR</sub>]({{ site.baseurl }}/docs/workflow-1.html)
 - [Workflow 2: LOCO PGS + GRM + SPA<sub>SQR</sub>]({{ site.baseurl }}/docs/workflow-2.html)
-- [LDAK-KVIK runs faster one-trait-at-a-time]({{ site.baseurl }}/docs/all-vs-per-trait.html) 
+- [LDAK-KVIK Step 1 runs faster one-trait-at-a-time]({{ site.baseurl }}/docs/all-vs-per-trait.html) 
 - [Effect-size estimation]({{ site.baseurl }}/docs/effect-size-estimation.html) 
 - [FAQ]({{ site.baseurl }}/docs/faq.html)
