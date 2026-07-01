@@ -64,3 +64,10 @@ binary — a single C++ executable that runs on Linux, macOS, and Windows.
 - [LDAK-KVIK Step 1 runs faster one-trait-at-a-time]({{ site.baseurl }}/docs/all-vs-per-trait.html) 
 - [Effect-size estimation]({{ site.baseurl }}/docs/effect-size-estimation.html) 
 - [FAQ]({{ site.baseurl }}/docs/faq.html)
+
+## AI agents and LLMs can help you!
+
+If you encounter difficulties installing or using SPA<sub>SQR</sub>, in the age of AI agents, simply send the URL of this tutorial, and your error message, to Claude Code or Codex, and most likely they can 
+resolve the issue for you! We have asked Claude Code and Codex to install GRAB and replicate the tutorial. The only thing we provided is the URL of this site, and they both successfully replicated every example command we provided. 
+
+However, bug reports and suggestions are always welcome at heng.qiang6@gmail.com.
