@@ -69,7 +69,7 @@ EOF
 - `--maf 0.01` uses only common variants.
 - `--make-grm-sparse 0.05` keeps relatedness coefficients above 0.05 and zeroes the rest. (Available in PLINK 2 since late 2025; GCTA computes the same GRM but more slowly.)
 
-Outputs `simu_geno.grm.sp` and its companion `simu_geno.grm.id`. Indices are **0-based** rows of `.grm.id`:
+PLINK 2 writes `simu_geno.grm.sp` and its companion `simu_geno.grm.id`. Indices are **0-based** rows of `.grm.id`:
 
 ```
 $ head simu_geno.grm.sp
