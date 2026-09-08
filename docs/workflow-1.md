@@ -68,7 +68,7 @@ EOF
 ./grab2 --int-pheno --pheno simu_geno.pheno --pheno-name Quantitative1,Quantitative2 --out simu_geno_int
 ```
 
-This command applies a rank-based inverse normal transformation (RINT) to each trait. In UK Biobank, RINT generally yields more associations than raw traits, possibly because the LOCO PGS explains more variance of the RINT-transformed trait. The output `simu_geno_int.txt` keeps `FID IID` and replaces each trait column with its RINT version:
+We first apply a rank-based inverse normal transformation (RINT) to each trait. In UK Biobank, RINT generally yields more associations than raw traits, possibly because the LOCO PGS explains more variance of the RINT-transformed trait. The command writes `simu_geno_int.txt`, which keeps the `FID IID` columns and replaces each trait column with its RINT version:
 
 ```
 $ head -3 simu_geno_int.txt
@@ -88,7 +88,7 @@ S00002  S00002  -1.28887908    0.636848104
     --max-threads 8
 ```
 
-LDAK-KVIK writes one LOCO PGS file per trait, named by the trait's **position** in the phenotype file: `ldak_step1.step1.pheno1.loco.prs` (Quantitative1) and `ldak_step1.step1.pheno2.loco.prs` (Quantitative2). One row per subject, one column per chromosome:
+We then train the LOCO PGS on the RINT-transformed traits with LDAK-KVIK. It writes one LOCO PGS file per trait, named by the trait's **position** in the phenotype file: `ldak_step1.step1.pheno1.loco.prs` for Quantitative1 and `ldak_step1.step1.pheno2.loco.prs` for Quantitative2. Each file has one row per subject and one column per chromosome, holding that subject's PGS built from all other chromosomes:
 
 ```
 $ head -3 ldak_step1.step1.pheno1.loco.prs
@@ -97,7 +97,7 @@ S00001  S00001  0.2954   0.3367   0.2901        0.3047
 S00002  S00002  -0.3886  -0.4240  -0.3571       -0.4109
 ```
 
-Here the same genotype file is used for PGS training and testing. In practice, PGS training typically uses genotyped SNPs (a few hundred thousand), while testing uses the full imputed set.
+For simplicity we use the same genotype file for PGS training and association testing. In practice the two stages usually differ: PGS training typically uses a few hundred thousand genotyped SNPs, while association testing uses the full imputed set.
 
 ### 3. Build the prediction list
 
@@ -108,7 +108,7 @@ Quantitative2   $(pwd)/ldak_step1.step1.pheno2.loco.prs
 EOF
 ```
 
-GRAB reads LOCO PGS through a two-column **prediction list**: trait name, then the absolute path to its LOCO PGS file (`$(pwd)` expands to the current directory). The format follows REGENIE's `pred.list`.
+GRAB locates the LOCO PGS files through a **prediction list**, a two-column text file that pairs each trait name with the absolute path to its LOCO PGS file. We write it by hand here, using `$(pwd)` to expand the current directory into an absolute path. The format follows REGENIE's `pred.list`.
 
 ### 4. Run SPA<sub>SQR</sub>
 
@@ -124,11 +124,11 @@ GRAB reads LOCO PGS through a two-column **prediction list**: trait name, then t
     --out spasqr_results
 ```
 
-Null-model fitting and association testing run in one call. `--spasqr-taus` sets the quantile levels to test; `--pheno-transform int` must match the RINT-transformed trait fed to LDAK-KVIK (see [Raw phenotypes](#raw-phenotypes-without-rint) if you skip RINT). One result file per trait: `spasqr_results.Quantitative1.SPAsqr`, `spasqr_results.Quantitative2.SPAsqr`.
+Finally we run SPA<sub>SQR</sub>. Null-model fitting and association testing happen in a single call. `--spasqr-taus` sets the quantile levels to test, and `--pheno-transform int` tells GRAB that the trait was RINT-transformed before PGS training, so the trait and the offset are on the same scale (see [Raw phenotypes](#raw-phenotypes-without-rint) if you skip RINT). GRAB writes one result file per trait: `spasqr_results.Quantitative1.SPAsqr` and `spasqr_results.Quantitative2.SPAsqr`.
 
 ## Output format
 
-One row per variant. With nine quantiles there are 37 columns: 10 fixed columns, then three blocks of nine (`P_tau`, `Z_tau`, `Z_Norm_tau`).
+Each result file has one row per variant. With nine quantiles it has 37 columns: 10 fixed columns with variant information and the combined $p$-value, followed by three blocks of nine per-quantile columns (`P_tau`, `Z_tau`, `Z_Norm_tau`).
 
 ```
 CHROM  POS     ID        REF  ALT  MISS_RATE  ALT_FREQ  MAC   HWE_P    P_CCT
@@ -159,7 +159,7 @@ Z_tau0.1  Z_tau0.2  Z_tau0.3  Z_tau0.4  Z_tau0.5  Z_tau0.6  Z_tau0.7  Z_tau0.8  
 
 ### REGENIE instead of LDAK-KVIK
 
-Replace steps 2–3 with a single REGENIE call; it writes the prediction list itself.
+REGENIE can replace steps 2 and 3 with a single call, because it writes the prediction list itself.
 
 ```bash
 # 2. Train the LOCO PGS with REGENIE (writes simu_geno_regenie_pred.list)
@@ -183,11 +183,11 @@ Replace steps 2–3 with a single REGENIE call; it writes the prediction list it
     --out spasqr_results
 ```
 
-REGENIE's `.loco` files are the transpose of LDAK-KVIK's (one row per chromosome, one column per subject, `FID_IID` joined). GRAB detects the format from the header.
+REGENIE's `.loco` files are the transpose of LDAK-KVIK's: one row per chromosome and one column per subject, with `FID` and `IID` joined by an underscore. GRAB detects which format it is reading from the header.
 
 ### Raw phenotypes (without RINT)
 
-Skip step 1 and feed `simu_geno.pheno` to LDAK-KVIK or REGENIE directly. Both tools regress out covariates and standardize the residuals internally, so the LOCO PGS live on a standardized scale. Tell GRAB to put the trait on the same scale:
+To avoid RINT, skip step 1 and feed the raw `simu_geno.pheno` to LDAK-KVIK or REGENIE directly. Both tools regress out the covariates and standardize the residuals internally, so the LOCO PGS live on a standardized scale. Pass `--pheno-transform standardize` so that GRAB puts the trait on the same scale:
 
 ```bash
 ./grab2 --method SPAsqr \

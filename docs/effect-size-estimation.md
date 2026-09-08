@@ -12,7 +12,7 @@ Score mode (Workflows 1–2) gives calibrated $p$-values and $Z$-scores but no e
 
 ## Complete pipeline
 
-Assumes the RINT phenotypes and prediction list from [Workflow 1]({{ site.baseurl }}/docs/workflow-1.html).
+This pipeline assumes the RINT-transformed phenotypes and the prediction list from [Workflow 1]({{ site.baseurl }}/docs/workflow-1.html) are already in place.
 
 ```bash
 # 1. List the variants to estimate, one ID per line
@@ -44,15 +44,15 @@ EOF
 
 ### 1. Variant list
 
-A plain-text file with one variant ID per line, matching the `ID` column of the `.bim` file. The example file is at [`data/simu_geno_wald_extract`](https://github.com/qhengncsu/SPAsqr.github.io/tree/main/data).
+We first write a plain-text file with one variant ID per line, matching the `ID` column of the `.bim` file. The example file is available at [`data/simu_geno_wald_extract`](https://github.com/qhengncsu/SPAsqr.github.io/tree/main/data).
 
 ### 2. Wald-mode run
 
-Two changes from the Workflow 1 command: `--spasqr-mode wald` switches to effect estimation, and `--extract` restricts the run to the listed variants. `--spasqr-taus` and `--pheno-transform int` are the same as in Workflow 1. All other flags (phenotype, covariates, `--pred-list`, `--pheno-transform`, `--sp-grm-*`) work as in score mode.
+We then rerun GRAB with two changes from the Workflow 1 command: `--spasqr-mode wald` switches to effect-size estimation, and `--extract` restricts the run to the listed variants. All other flags, including `--spasqr-taus`, `--pheno-transform`, `--pred-list`, and `--sp-grm-*`, work exactly as in score mode.
 
 ## Output format
 
-One file per trait (`spasqr_effect.Quantitative1.SPAsqr`, `spasqr_effect.Quantitative2.SPAsqr`). With nine quantiles each file has 46 columns: 10 fixed columns plus four blocks of nine.
+GRAB writes one file per trait, `spasqr_effect.Quantitative1.SPAsqr` and `spasqr_effect.Quantitative2.SPAsqr`. With nine quantiles each file has 46 columns: 10 fixed columns followed by four blocks of nine per-quantile columns.
 
 ```
 CHROM  POS  ID  REF  ALT  MISS_RATE  ALT_FREQ  MAC  HWE_P  P_CCT

@@ -12,7 +12,7 @@ In highly related cohorts the LOCO PGS offset alone may not calibrate the tests:
 
 ## Complete pipeline
 
-Steps 1–3 are identical to Workflow 1; steps 4–5 are new.
+Steps 1–3 are identical to Workflow 1. Steps 4 and 5 are new.
 
 ```bash
 # 1. Rank-based inverse-normal-transform the traits
@@ -66,10 +66,9 @@ EOF
     --out simu_geno
 ```
 
-- `--maf 0.01` uses only common variants.
-- `--make-grm-sparse 0.05` keeps relatedness coefficients above 0.05 and zeroes the rest. (Available in PLINK 2 since late 2025; GCTA computes the same GRM but more slowly.)
+We compute the sparse GRM with PLINK 2, which has supported this since late 2025 (GCTA computes the same GRM, but more slowly). `--maf 0.01` restricts the computation to common variants, and `--make-grm-sparse 0.05` keeps only relatedness coefficients above 0.05 and zeroes the rest.
 
-PLINK 2 writes `simu_geno.grm.sp` and its companion `simu_geno.grm.id`. Indices are **0-based** rows of `.grm.id`:
+PLINK 2 writes `simu_geno.grm.sp` together with the companion ID file `simu_geno.grm.id`. Each row of `.grm.sp` holds a pair of **0-based** subject indices and their relatedness coefficient, where index $i$ refers to the $(i+1)$-th row of `.grm.id`:
 
 ```
 $ head simu_geno.grm.sp
@@ -95,17 +94,17 @@ $ head simu_geno.grm.sp
     --out spasqr_results
 ```
 
-The only change from Workflow 1 is `--sp-grm-plink2 simu_geno.grm.sp`. GRAB finds `simu_geno.grm.id` from the same prefix. Output format is the same as Workflow 1.
+The only change from Workflow 1 is the added `--sp-grm-plink2 simu_geno.grm.sp`. GRAB finds `simu_geno.grm.id` from the same prefix. The output format is the same as in Workflow 1.
 
 ## Other options
 
 ### REGENIE instead of LDAK-KVIK
 
-Train the PGS with REGENIE as in Workflow 1, then pass `--pred-list simu_geno_regenie_pred.list` in step 5. Everything else is unchanged.
+Train the LOCO PGS with REGENIE as described in Workflow 1, then pass `--pred-list simu_geno_regenie_pred.list` in step 5. Everything else stays the same.
 
 ### GRM from other tools: `--sp-grm-grab`
 
-For a GRM not computed by PLINK 2, write it as a single IID-keyed text file and pass it with `--sp-grm-grab` instead of `--sp-grm-plink2`:
+If the GRM was computed by a tool other than PLINK 2, write it as a single IID-keyed text file and pass it with `--sp-grm-grab` instead of `--sp-grm-plink2`. The file looks like this:
 
 ```
 $ head simu_geno.grm.grab
@@ -116,8 +115,7 @@ IID_3   IID_0   0.5012
 IID_4   IID_3   0.2503
 ```
 
-- Tab-delimited, header `IID1 IID2 VALUE`; IIDs match the `.fam` file. No `.grm.id` needed.
-- One row per related pair (GRAB symmetrizes) plus the diagonal. Unlisted pairs are zero.
+The file is tab-delimited with the header `IID1 IID2 VALUE`, where the IIDs match the `.fam` file, so no companion `.grm.id` is needed. It lists each related pair once (GRAB symmetrizes the matrix) plus the diagonal entries; any pair not listed is treated as zero.
 
 ```bash
 ./grab2 --method SPAsqr \
@@ -134,7 +132,7 @@ IID_4   IID_3   0.2503
 
 ### When to omit the GRM
 
-The GRM only changes the reference distribution, not the score statistic. For cohorts with low relatedness, omit it (Workflow 1) and the results will be very similar.
+The GRM only changes the reference distribution of the score statistic, not the statistic itself. For cohorts with low relatedness it can be omitted, as in Workflow 1, and the results will be very similar.
 
 A GCTA-style GRM is unreliable for admixed or multi-ancestry cohorts, where population structure produces far too many entries above 0.05.
 
