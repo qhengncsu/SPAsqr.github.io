@@ -124,7 +124,7 @@ GRAB locates the LOCO PGS files through a **prediction list**, a two-column text
     --out spasqr_results
 ```
 
-Finally we run SPA<sub>SQR</sub>. Null-model fitting and association testing happen in a single call. `--spasqr-taus` sets the quantile levels to test, and `--pheno-transform int` makes GRAB apply RINT to the trait it reads, so the trait is on the same scale as the LOCO PGS trained in step 2 (applying RINT to an already RINT-transformed trait is harmless; see [Raw phenotypes](#raw-phenotypes-without-rint) if you skip RINT). GRAB writes one result file per trait: `spasqr_results.Quantitative1.SPAsqr` and `spasqr_results.Quantitative2.SPAsqr`.
+Finally we run SPA<sub>SQR</sub>. Null-model fitting and association testing happen in a single call. `--spasqr-taus` sets the quantile levels to test, and `--pheno-transform int` makes GRAB apply RINT to the trait it reads. Here it is redundant, since `simu_geno_int.txt` is already RINT-transformed, but it is the default and keeps the trait on the same scale as the LOCO PGS trained in step 2 (see [Raw phenotypes](#raw-phenotypes-without-rint) if you skip RINT). GRAB writes one result file per trait: `spasqr_results.Quantitative1.SPAsqr` and `spasqr_results.Quantitative2.SPAsqr`.
 
 ## Output format
 
