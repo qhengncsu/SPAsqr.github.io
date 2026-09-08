@@ -129,12 +129,3 @@ The file is tab-delimited with the header `IID1 IID2 VALUE`, where the IIDs matc
     --threads 8 \
     --out spasqr_results
 ```
-
-### When to omit the GRM
-
-The GRM only changes the reference distribution of the score statistic, not the statistic itself. For cohorts with low relatedness it can be omitted, as in Workflow 1, and the results will be very similar.
-
-A GCTA-style GRM is unreliable for admixed or multi-ancestry cohorts, where population structure produces far too many entries above 0.05.
-
-- **Admixed, low relatedness:** omit the GRM (Workflow 1).
-- **Admixed and highly related** (e.g. the Mexico City Prospective Study): compute an ancestry-aware sparse GRM with [FastSparseGRM](https://github.com/rounakdey/FastSparseGRM), write it in the `--sp-grm-grab` format above, and pass it with `--sp-grm-grab`.
