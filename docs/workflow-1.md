@@ -124,7 +124,7 @@ GRAB locates the LOCO PGS files through a **prediction list**, a two-column text
     --out spasqr_results
 ```
 
-Finally we run SPA<sub>SQR</sub>. Null-model fitting and association testing happen in a single call. `--spasqr-taus` sets the quantile levels to test, and `--pheno-transform int` tells GRAB that the trait was RINT-transformed before PGS training, so the trait and the offset are on the same scale (see [Raw phenotypes](#raw-phenotypes-without-rint) if you skip RINT). GRAB writes one result file per trait: `spasqr_results.Quantitative1.SPAsqr` and `spasqr_results.Quantitative2.SPAsqr`.
+Finally we run SPA<sub>SQR</sub>. Null-model fitting and association testing happen in a single call. `--spasqr-taus` sets the quantile levels to test, and `--pheno-transform int` makes GRAB apply RINT to the trait it reads, so the trait is on the same scale as the LOCO PGS trained in step 2 (applying RINT to an already RINT-transformed trait is harmless; see [Raw phenotypes](#raw-phenotypes-without-rint) if you skip RINT). GRAB writes one result file per trait: `spasqr_results.Quantitative1.SPAsqr` and `spasqr_results.Quantitative2.SPAsqr`.
 
 ## Output format
 
@@ -217,7 +217,7 @@ Optional:
 | Flag | Default | What it does |
 | --- | --- | --- |
 | `--pred-list` | — | LOCO PGS prediction list. Omit to run without an offset (valid but much less powerful). |
-| `--pheno-transform` | `int` | `int` or `standardize`. **Must match the trait fed to the PGS software.** |
+| `--pheno-transform` | `int` | Transformation GRAB applies to the trait: `int` or `standardize`. **Must match the transformation applied to the trait during PGS training.** |
 | `--pheno-name` | all trait columns | Traits to test, comma-separated. |
 | `--covar` | — | Covariate file; may be the same file as `--pheno`. |
 | `--covar-name` | — | Covariate columns, comma-separated. |
