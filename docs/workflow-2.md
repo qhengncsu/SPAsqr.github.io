@@ -8,7 +8,9 @@ has_children: false
 
 # **Workflow 2: LOCO PGS + GRM + SPA<sub>SQR</sub>**
 
-In highly related cohorts the LOCO PGS offset alone may not calibrate the tests: REGENIE's PGS may leave residual inflation, and LDAK-KVIK's may deflate. A **sparse genetic relationship matrix (GRM)** calibrates the null variance of the score statistic under strong relatedness. This page adds one to [Workflow 1]({{ site.baseurl }}/docs/workflow-1.html).
+When the cohort is highly related, the LOCO PGS offset alone may not be enough to calibrate the tests. REGENIE's LOCO PGS is usually less predictive than LDAK-KVIK's, so it may not fully remove the type-I inflation caused by relatedness; LDAK-KVIK's LOCO PGS, on the other hand, may over-correct and deflate the test statistics.
+
+To handle this, SPA<sub>SQR</sub> can take a **sparse genetic relationship matrix (GRM)** as an additional input. The GRM enters only the variance of the score statistic, where it accounts for the correlation between related subjects, so that the null distribution is correctly calibrated under strong relatedness. This page shows how to build a sparse GRM with PLINK 2 and add it to the pipeline of [Workflow 1]({{ site.baseurl }}/docs/workflow-1.html).
 
 ## Complete pipeline
 
