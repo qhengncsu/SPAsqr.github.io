@@ -14,7 +14,7 @@ To obtain effect sizes, SPA<sub>SQR</sub> provides a **Wald mode** (`--spasqr-mo
 
 ## Complete pipeline
 
-This pipeline assumes the RINT-transformed phenotypes and the prediction list from [Workflow 1]({{ site.baseurl }}/docs/workflow-1.html) are already in place.
+Here we assume that the RINT-transformed phenotype file `simu_geno_int.txt` and the prediction list `simu_geno_ldak_pred.list` from [Workflow 1]({{ site.baseurl }}/docs/workflow-1.html) are already in place.
 
 ```bash
 # 1. List the variants to estimate, one ID per line
