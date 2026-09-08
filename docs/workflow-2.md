@@ -8,23 +8,54 @@ has_children: false
 
 # **Workflow 2: LOCO PGS + GRM + SPA<sub>SQR</sub>**
 
-When the cohort is highly related, the LOCO PGS offset alone may not calibrate the tests. REGENIE LOCO PGS is usually less predictive than LDAK-KVIK's, so it may not fully remove relatedness-driven type-I inflation; LDAK-KVIK LOCO PGS may instead deflate the test statistics.
+In highly related cohorts the LOCO PGS offset alone may not calibrate the tests: REGENIE's PGS may leave residual inflation, and LDAK-KVIK's may deflate. A **sparse genetic relationship matrix (GRM)** calibrates the null variance of the score statistic under strong relatedness. This page adds one to [Workflow 1]({{ site.baseurl }}/docs/workflow-1.html).
 
-SPA<sub>SQR</sub> may leverage a **sparse genetic relationship matrix (GRM)** to calibrate the null variance of the score statistics under strong relatedness. Here we show how to add one to the workflow.
+## Complete pipeline
 
-In addition to the files from [Workflow 1]({{ site.baseurl }}/docs/workflow-1.html) — `simu_geno.{bed,bim,fam}`, `simu_geno.pheno`, and the LOCO PGS prediction list `simu_geno_ldak_pred.list` (or `simu_geno_regenie_pred.list`) — Workflow 2 requires two additional files:
+Steps 1–3 are identical to Workflow 1; steps 4–5 are new.
 
+```bash
+# 1. Inverse-normal-transform the traits
+./grab2 --int-pheno --pheno simu_geno.pheno --pheno-name Quantitative1,Quantitative2 --out simu_geno_int
+
+# 2. Train the LOCO PGS with LDAK-KVIK
+./ldak6.2.linux \
+    --kvik-step1 ldak_step1 \
+    --bfile simu_geno \
+    --pheno simu_geno_int.txt --mpheno ALL \
+    --covar simu_geno.pheno   --covar-names MALE,PC1,PC2,PC3,PC4 \
+    --max-threads 8
+
+# 3. Build the prediction list
+cat > simu_geno_ldak_pred.list <<EOF
+Quantitative1   $(pwd)/ldak_step1.step1.pheno1.loco.prs
+Quantitative2   $(pwd)/ldak_step1.step1.pheno2.loco.prs
+EOF
+
+# 4. Build the sparse GRM with PLINK 2
+./plink2 \
+    --bfile simu_geno \
+    --maf 0.01 \
+    --make-grm-sparse 0.05 \
+    --threads 8 \
+    --out simu_geno
+
+# 5. Run SPAsqr with the LOCO PGS and the sparse GRM
+./grab2 --method SPAsqr \
+    --bfile simu_geno \
+    --pheno simu_geno_int.txt --pheno-name Quantitative1,Quantitative2 \
+    --covar simu_geno.pheno   --covar-name MALE,PC1,PC2,PC3,PC4 \
+    --pred-list simu_geno_ldak_pred.list \
+    --sp-grm-plink2 simu_geno.grm.sp \
+    --spasqr-taus 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9 \
+    --pheno-transform int \
+    --threads 8 \
+    --out spasqr_results
 ```
-simu_geno.grm.sp     sparse GRM, three columns: 0-based i, 0-based j, correlation
-simu_geno.grm.id     companion ID file: one row per subject, FID  IID
-```
 
-We pass the path of simu_geno.grm.sp to `--sp-grm-plink2` argument of GRAB. The companion `.grm.id` file lists the subject IDs for the 0-based indices in `.grm.sp`; GRAB auto-detects it from the `.grm.sp` prefix.
+## Step by step
 
-
-## Computing the sparse GRM with PLINK 2
-
-The GRM was popularized by [GCTA](https://yanglab.westlake.edu.cn/software/gcta/), but computing it there has historically been slow. Since late 2025, [PLINK 2](https://www.cog-genomics.org/plink/2.0/) also computes sparse GRMs, quickly and simply:
+### 4. Build the sparse GRM
 
 ```bash
 ./plink2 \
@@ -35,10 +66,10 @@ The GRM was popularized by [GCTA](https://yanglab.westlake.edu.cn/software/gcta/
     --out simu_geno
 ```
 
-- `--maf 0.01` restricts GRM computation to common variants with minor allele frequency $\geq 0.01$.
-- `--make-grm-sparse 0.05` retains genetic correlation coefficients above $0.05$ and zeroes out the rest.
+- `--maf 0.01` uses only common variants.
+- `--make-grm-sparse 0.05` keeps relatedness coefficients above 0.05 and zeroes the rest. (Available in PLINK 2 since late 2025; GCTA computes the same GRM but more slowly.)
 
-The command produces `simu_geno.grm.sp` along with the companion `simu_geno.grm.id`. The `.grm.sp` file is a three-column text file:
+Outputs `simu_geno.grm.sp` and its companion `simu_geno.grm.id`. Indices are **0-based** rows of `.grm.id`:
 
 ```
 $ head simu_geno.grm.sp
@@ -49,12 +80,7 @@ $ head simu_geno.grm.sp
 4   3   0.2503      # first cousin of subject 3
 ```
 
-Sample $i$, $j$ indices are **0-based** and correspond to the $i+1$-th and $j+1$-th row in `simu_geno.grm.id`.
-
-
-## SPA<sub>SQR</sub> association testing with GRM variance correction
-
-With the prediction list from [Workflow 1]({{ site.baseurl }}/docs/workflow-1.html) and the sparse GRM ready, just add `--sp-grm-plink2` for GRM-aware variance:
+### 5. Run SPA<sub>SQR</sub> with the GRM
 
 ```bash
 ./grab2 --method SPAsqr \
@@ -63,105 +89,35 @@ With the prediction list from [Workflow 1]({{ site.baseurl }}/docs/workflow-1.ht
     --covar simu_geno.pheno   --covar-name MALE,PC1,PC2,PC3,PC4 \
     --pred-list simu_geno_ldak_pred.list \
     --sp-grm-plink2 simu_geno.grm.sp \
+    --spasqr-taus 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9 \
+    --pheno-transform int \
     --threads 8 \
     --out spasqr_results
 ```
 
+The only change from Workflow 1 is `--sp-grm-plink2 simu_geno.grm.sp`. GRAB finds `simu_geno.grm.id` from the same prefix. Output format is the same as Workflow 1.
 
-## End-to-end recipes (with INT)
+## Other options
 
-LDAK-KVIK LOCO PGS + sparse GRM, with INT:
+### REGENIE instead of LDAK-KVIK
 
-```bash
-# 1. INT-transform the selected traits
-./grab2 --int-pheno --pheno simu_geno.pheno --pheno-name Quantitative1,Quantitative2 --out simu_geno_int
+Train the PGS with REGENIE as in Workflow 1, then pass `--pred-list simu_geno_regenie_pred.list` in step 5. Everything else is unchanged.
 
-# 2. Train the LOCO PGS on the INT-transformed Y
-./ldak6.2.linux \
-    --kvik-step1 ldak_step1 \
-    --bfile simu_geno \
-    --pheno simu_geno_int.txt --mpheno ALL \
-    --covar simu_geno.pheno   --covar-names MALE,PC1,PC2,PC3,PC4 \
-    --max-threads 8
+### GRM from other tools: `--sp-grm-grab`
 
-# 3. Build the LDAK pred-list
-cat > simu_geno_ldak_pred.list <<EOF
-Quantitative1   $(pwd)/ldak_step1.step1.pheno1.loco.prs
-Quantitative2   $(pwd)/ldak_step1.step1.pheno2.loco.prs
-EOF
-
-# 4. Build the sparse GRM (one-time cost)
-./plink2 \
-    --bfile simu_geno \
-    --maf 0.01 \
-    --make-grm-sparse 0.05 \
-    --threads 8 \
-    --out simu_geno
-
-# 5. Run SPAsqr with both the LOCO PGS and the sparse GRM
-./grab2 --method SPAsqr \
-    --bfile simu_geno \
-    --pheno simu_geno_int.txt --pheno-name Quantitative1,Quantitative2 \
-    --covar simu_geno.pheno   --covar-name MALE,PC1,PC2,PC3,PC4 \
-    --pred-list simu_geno_ldak_pred.list \
-    --sp-grm-plink2 simu_geno.grm.sp \
-    --threads 8 \
-    --out spasqr_results
-```
-
-REGENIE LOCO PGS + sparse GRM, with INT:
-
-```bash
-# 1. INT-transform the selected traits
-./grab2 --int-pheno --pheno simu_geno.pheno --pheno-name Quantitative1,Quantitative2 --out simu_geno_int
-
-# 2. Train the LOCO PGS on the INT-transformed Y
-./regenie \
-    --step 1 \
-    --bed simu_geno \
-    --phenoFile simu_geno_int.txt --phenoColList Quantitative1,Quantitative2 \
-    --covarFile simu_geno.pheno   --covarColList MALE,PC1,PC2,PC3,PC4 \
-    --bsize 1000 --threads 8 \
-    --out simu_geno_regenie
-
-# 3. Build the sparse GRM (one-time cost)
-./plink2 \
-    --bfile simu_geno \
-    --maf 0.01 \
-    --make-grm-sparse 0.05 \
-    --threads 8 \
-    --out simu_geno
-
-# 4. Run SPAsqr with REGENIE's native pred-list and the sparse GRM
-./grab2 --method SPAsqr \
-    --bfile simu_geno \
-    --pheno simu_geno_int.txt --pheno-name Quantitative1,Quantitative2 \
-    --covar simu_geno.pheno   --covar-name MALE,PC1,PC2,PC3,PC4 \
-    --pred-list simu_geno_regenie_pred.list \
-    --sp-grm-plink2 simu_geno.grm.sp \
-    --threads 8 \
-    --out spasqr_results
-```
-
-## Another GRM input mode: `--sp-grm-grab`
-
-Besides `--sp-grm-plink2`, GRAB accepts a generic sparse GRM through a second flag, `--sp-grm-grab`, which reads a single IID-keyed text file. This is designed for GRMs computed using tools other than PLINK 2. `--sp-grm-grab` expects the GRM
-file to take the following format:
+For a GRM not computed by PLINK 2, write it as a single IID-keyed text file and pass it with `--sp-grm-grab` instead of `--sp-grm-plink2`:
 
 ```
 $ head simu_geno.grm.grab
 IID1    IID2     VALUE
 IID_0   IID_0   1.0024
 IID_1   IID_1   0.9981
-IID_3   IID_0   0.5012      
-IID_4   IID_3   0.2503     
+IID_3   IID_0   0.5012
+IID_4   IID_3   0.2503
 ```
 
-- Three tab-delimited columns with the header `IID1  IID2  VALUE`.
-- One row per related pair (if we have an entry 'IID_4   IID_3   0.2503', then there is no need to have a separate entry 'IID_3   IID_4   0.2503', GRAB automatically symmetrizes the GRM); the diagonal entries of the GRM should be included; all unlisted pairs are treated as zero.
-- `IID1`/`IID2` are the sample **IIDs** (matching the `.fam` file). No companion `.grm.id` needed — unlike the `--sp-grm-plink2` mode.
-
-Pass it to SPA<sub>SQR</sub> exactly like the PLINK 2 GRM, just with a different flag `--sp-grm-grab`:
+- Tab-delimited, header `IID1 IID2 VALUE`; IIDs match the `.fam` file. No `.grm.id` needed.
+- One row per related pair (GRAB symmetrizes) plus the diagonal. Unlisted pairs are zero.
 
 ```bash
 ./grab2 --method SPAsqr \
@@ -170,18 +126,17 @@ Pass it to SPA<sub>SQR</sub> exactly like the PLINK 2 GRM, just with a different
     --covar simu_geno.pheno   --covar-name MALE,PC1,PC2,PC3,PC4 \
     --pred-list simu_geno_ldak_pred.list \
     --sp-grm-grab simu_geno.grm.grab \
+    --spasqr-taus 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9 \
+    --pheno-transform int \
     --threads 8 \
     --out spasqr_results
 ```
 
+### When to omit the GRM
 
-## Caveat of using a sparse GRM
+The GRM only changes the reference distribution, not the score statistic. For cohorts with low relatedness, omit it (Workflow 1) and the results will be very similar.
 
-The sparse GRM is purely a variance-calibration device: omitting it does not change the score statistic itself, only its reference distribution. It can be omitted when the study cohort has an objectively low degree of relatedness, and the GWAS results will be mostly similar.
+A GCTA-style GRM is unreliable for admixed or multi-ancestry cohorts, where population structure produces far too many entries above 0.05.
 
-It is suitable to use PLINK2 or GCTA to compute the sparse GRM when the population is relatively homogeneous. Unfortunately, we caution that it is well-known that a GCTA-style sparse GRM can be highly inaccurate when computed from genotypes of admixed individuals or when the participants are from multiple ancestries. In that case, the GRM is confounded with population structure, with many, many entries exceeding 0.05 (far too many :(). 
-
-- For admixed cohorts with **low** relatedness, simply omit the GRM (avoid both `--sp-grm-*` flags): SPA<sub>SQR</sub> then uses an identity GRM. In other words, use workflow 1!
-- For cohorts that are both **admixed and highly related** (a rare combination, but the Mexico City Prospective Study is such an example), compute an **ancestry-aware** sparse GRM with the [FastSparseGRM](https://github.com/rounakdey/FastSparseGRM) R package. After computing the sparse GRM, generate a GRM file that mimics the format of simu_geno.grm.grab and pass to GRAB via `--sp-grm-grab`. 
-
-
+- **Admixed, low relatedness:** omit the GRM (Workflow 1).
+- **Admixed and highly related** (e.g. the Mexico City Prospective Study): compute an ancestry-aware sparse GRM with [FastSparseGRM](https://github.com/rounakdey/FastSparseGRM), write it in the `--sp-grm-grab` format above, and pass it with `--sp-grm-grab`.

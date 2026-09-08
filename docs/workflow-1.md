@@ -8,58 +8,76 @@ has_children: false
 
 # **Workflow 1: LOCO PGS + SPA<sub>SQR</sub>**
 
-We run SPA<sub>SQR</sub> association testing with **leave-one-chromosome-out (LOCO) polygenic scores (PGS)** as an offset. LOCO PGS are per-subject trait predictions built from every chromosome *except* the one being tested. SPA<sub>SQR</sub> subtracts the chromosome-specific LOCO PGS from the trait before fitting the null smoothed QR model. This removes the polygenic background from other chromosomes, which controls for relatedness and substantially improves the statistical power of the per-variant score tests.
+SPA<sub>SQR</sub> uses **leave-one-chromosome-out (LOCO) polygenic scores (PGS)** as an offset: for each chromosome, the PGS built from all *other* chromosomes is subtracted from the trait before fitting the null model. This controls for relatedness and substantially improves power. LOCO PGS from linear-model software work well for this purpose, so we build them with [**LDAK-KVIK**](https://dougspeed.com/ldak-kvik/) or [**REGENIE**](https://rgcgithub.github.io/regenie/).
 
-Although SPA<sub>SQR</sub> is a quantile GWAS method, LOCO PGS computed using linear GWAS software work very well for our purpose. We therefore outsource the task of PGS construction to either [**LDAK-KVIK**](https://dougspeed.com/ldak-kvik/) or [**REGENIE**](https://rgcgithub.github.io/regenie/).
+## Inputs
 
-
-## Data that you will need
-
-Throughout this page we assume a working directory containing the genotype file and the phenotype/covariate file:
+All files are in the [`data/`](https://github.com/qhengncsu/SPAsqr.github.io/tree/main/data) folder of this site.
 
 ```
-simu_geno.{bed,bim,fam}    PLINK 1 genotype fileset
-simu_geno.pheno            phenotype + covariate columns
-grab2                      GRAB binary
-ldak6.2.linux              LDAK binary
-regenie                    REGENIE binary
-plink2                     PLINK 2 binary (used in Workflow 2 to build the sparse GRM)
+simu_geno.{bed,bim,fam}    PLINK 1 genotypes (5000 subjects, 5000 variants, 22 autosomes, 1250 families of 4)
+simu_geno.pheno            phenotypes + covariates
 ```
 
-The phenotype file `simu_geno.pheno` is in PLINK format, with `FID`/`IID` in the first two columns and phenotype/covariate data in the remaining columns:
-
 ```
-$ head simu_geno.pheno
+$ head -3 simu_geno.pheno
 FID     IID     MALE  PC1         PC2         PC3          PC4         Quantitative1  Quantitative2
 S00001  S00001  0     0.0065558   -0.0190989  0.00331922   0.00574267  0.447611215    -1.38874574
 S00002  S00002  1     0.00947819  -0.0120386  -0.0226929   0.0132888   -1.28469274    0.626376502
 ```
 
-GRAB also accepts a single `IID` key column in place of `FID IID`, but LDAK-KVIK and REGENIE require `FID IID`. The bundled `simu_geno.*` fileset is a simulated 5000-subject × 5000-variant × 22-autosome dataset (1250 families of 4); `Quantitative1` and `Quantitative2` carry real polygenic signal (heritability ≈ 0.30, 500 causal SNPs each). All inputs are in the [`data/`](https://github.com/qhengncsu/SPAsqr.github.io/tree/main/data) folder; download them to reproduce this tutorial.
+We test `Quantitative1` and `Quantitative2` adjusting for `MALE` and `PC1`–`PC4`. GRAB adds the intercept automatically. The phenotype file must start with `FID IID` for LDAK-KVIK and REGENIE (GRAB alone also accepts a single `IID` column).
 
-We run QR GWAS for `Quantitative1` and `Quantitative2`, adjusting for `MALE` and `PC1`–`PC4`; GRAB adds the intercept automatically, there is no need to explicitly add one in the phenotype file. For simplicity we use the same genotype file for both LOCO PGS construction and association testing. In practice the two stages usually use different variants: LOCO PGS is typically trained on directly genotyped SNPs (a few hundred thousand high-quality variants), while association testing uses the full imputed set (millions of variants, including rare ones) to maximize discovery.
+## Complete pipeline
 
+```bash
+# 1. Inverse-normal-transform the traits
+./grab2 --int-pheno --pheno simu_geno.pheno --pheno-name Quantitative1,Quantitative2 --out simu_geno_int
 
-## Inverse normal transformation
+# 2. Train the LOCO PGS with LDAK-KVIK
+./ldak6.2.linux \
+    --kvik-step1 ldak_step1 \
+    --bfile simu_geno \
+    --pheno simu_geno_int.txt --mpheno ALL \
+    --covar simu_geno.pheno   --covar-names MALE,PC1,PC2,PC3,PC4 \
+    --max-threads 8
 
-Before computing the PGS we recommend applying a **rank-based inverse normal transformation (INT)** to each trait's non-missing values, because in UK Biobank real data analysis we find that doing so generally yields more associations than not applying it.
+# 3. Build the prediction list
+cat > simu_geno_ldak_pred.list <<EOF
+Quantitative1   $(pwd)/ldak_step1.step1.pheno1.loco.prs
+Quantitative2   $(pwd)/ldak_step1.step1.pheno2.loco.prs
+EOF
+
+# 4. Run SPAsqr
+./grab2 --method SPAsqr \
+    --bfile simu_geno \
+    --pheno simu_geno_int.txt --pheno-name Quantitative1,Quantitative2 \
+    --covar simu_geno.pheno   --covar-name MALE,PC1,PC2,PC3,PC4 \
+    --pred-list simu_geno_ldak_pred.list \
+    --spasqr-taus 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9 \
+    --pheno-transform int \
+    --threads 8 \
+    --out spasqr_results
+```
+
+## Step by step
+
+### 1. Inverse normal transformation
 
 ```bash
 ./grab2 --int-pheno --pheno simu_geno.pheno --pheno-name Quantitative1,Quantitative2 --out simu_geno_int
 ```
 
-The output `simu_geno_int.txt` retains the `FID IID` key columns and replaces each requested trait column with its INT-transformed version.
+Applies a rank-based inverse normal transformation (INT) to each trait. In UK Biobank, INT generally yields more associations than raw traits. The output `simu_geno_int.txt` keeps `FID IID` and replaces each trait column with its INT version:
 
 ```
-$ head simu_geno_int.txt
+$ head -3 simu_geno_int.txt
 FID     IID     Quantitative1   Quantitative2
 S00001  S00001  0.40780638     -1.39757115
 S00002  S00002  -1.28887908    0.636848104
 ```
 
-## Computing the LOCO PGS with LDAK-KVIK
-
-We may compute LDAK LOCO PGS for both `Quantitative1` and `Quantitative2` using `MALE`, `PC1`, `PC2`, `PC3`, `PC4` as covariates via:
+### 2. Train the LOCO PGS
 
 ```bash
 ./ldak6.2.linux \
@@ -70,24 +88,18 @@ We may compute LDAK LOCO PGS for both `Quantitative1` and `Quantitative2` using 
     --max-threads 8
 ```
 
-This writes one LOCO PGS file per phenotype, named by the trait's **position** in the phenotype file rather than its column name:
-
-```
-ldak_step1.step1.pheno1.loco.prs        (LOCO PGS for Quantitative1)
-ldak_step1.step1.pheno2.loco.prs        (LOCO PGS for Quantitative2)
-```
-
-Each row of a LOCO PGS file is one subject's LOCO PGS, with one column per chromosome:
+Writes one LOCO PGS file per trait, named by the trait's **position** in the phenotype file: `ldak_step1.step1.pheno1.loco.prs` (Quantitative1) and `ldak_step1.step1.pheno2.loco.prs` (Quantitative2). One row per subject, one column per chromosome:
 
 ```
 $ head -3 ldak_step1.step1.pheno1.loco.prs
-FID     IID     Chr1     Chr2     Chr3     Chr4     ...  Chr22
-S00001  S00001  0.2954   0.3367   0.2901   0.2952        0.3047
-S00002  S00002  -0.3886  -0.4240  -0.3571  -0.4036       -0.4109
+FID     IID     Chr1     Chr2     Chr3     ...  Chr22
+S00001  S00001  0.2954   0.3367   0.2901        0.3047
+S00002  S00002  -0.3886  -0.4240  -0.3571       -0.4109
 ```
 
-GRAB reads the LOCO PGS through a **prediction list**: a two-column table pairing each phenotype name with the absolute path to its LOCO PGS file, passed via `--pred-list`. The format mimics REGENIE's design. We may manually
-create the prediction list via the following command:
+Here the same genotype file is used for PGS training and testing. In practice, PGS training typically uses genotyped SNPs (a few hundred thousand), while testing uses the full imputed set.
+
+### 3. Build the prediction list
 
 ```bash
 cat > simu_geno_ldak_pred.list <<EOF
@@ -96,56 +108,9 @@ Quantitative2   $(pwd)/ldak_step1.step1.pheno2.loco.prs
 EOF
 ```
 
-`$(pwd)` expands to the current working directory so each entry ends up as an absolute path for the LOCO PGS. 
+GRAB reads LOCO PGS through a two-column **prediction list**: trait name, then the absolute path to its LOCO PGS file (`$(pwd)` expands to the current directory). The format follows REGENIE's `pred.list`.
 
-
-## Computing the LOCO PGS with REGENIE
-
-Alternatively, we may compute LOCO PGS via REGENIE:
-
-```bash
-./regenie \
-    --step 1 \
-    --bed simu_geno \
-    --phenoFile simu_geno_int.txt --phenoColList Quantitative1,Quantitative2 \
-    --covarFile simu_geno.pheno   --covarColList MALE,PC1,PC2,PC3,PC4 \
-    --bsize 1000 --threads 8 \
-    --out simu_geno_regenie
-```
-
-This generates two LOCO PGS files plus REGENIE's own prediction list:
-
-```
-simu_geno_regenie_1.loco          (LOCO PGS for Quantitative1)
-simu_geno_regenie_2.loco          (LOCO PGS for Quantitative2)
-simu_geno_regenie_pred.list       (pairs Quantitative1 / Quantitative2 with their .loco files)
-```
-
-REGENIE's `.loco` format is the **transpose** of LDAK-KVIK's: each row is one chromosome and each column is one subject (with FID and IID joined into a single `FID_IID` token). REGENIE writes 23 chromosome rows; the first 22 rows for 22 autosomes, and the last row for the sex chromosome.
-
-```
-$ head -5 simu_geno_regenie_1.loco
-FID_IID  S00001_S00001  S00002_S00002  S00003_S00003  S00004_S00004  ...
-1        -0.0089        -0.1859        -0.0925        -0.1799        ...
-2        -0.0091        -0.1506        -0.1031        -0.1426        ...
-3        -0.0602        -0.1983        -0.1319        -0.2331        ...
-4        -0.0156        -0.2151        -0.0762        -0.2677        ...
-```
-
-GRAB auto-detects the format from each LOCO file's header and distinguishes whether the LOCO PGS file is produced by LDAK-KVIK or REGENIE.
-Unlike LDAK-KVIK, REGENIE produces `simu_geno_regenie_pred.list` automatically, in the exact format `grab2 --pred-list` expects:
-
-```
-$ cat simu_geno_regenie_pred.list
-Quantitative1   /abs/path/to/simu_geno_regenie_1.loco
-Quantitative2   /abs/path/to/simu_geno_regenie_2.loco
-```
-
-Therefore, we may directly use the prediction list generated by REGENIE without manually creating it.
-
-## Running association testing with GRAB
-
-Once the LOCO PGS are in place and the prediction list is ready, null model fitting (SPA<sub>SQR</sub> step 1) and association testing (SPA<sub>SQR</sub> step 2) are completed in a single `grab2` call:
+### 4. Run SPA<sub>SQR</sub>
 
 ```bash
 ./grab2 --method SPAsqr \
@@ -154,58 +119,16 @@ Once the LOCO PGS are in place and the prediction list is ready, null model fitt
     --covar simu_geno.pheno   --covar-name MALE,PC1,PC2,PC3,PC4 \
     --pred-list simu_geno_ldak_pred.list \
     --spasqr-taus 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9 \
-    --threads 8 \
     --pheno-transform int \
+    --threads 8 \
     --out spasqr_results
 ```
 
-Here we use `simu_geno_ldak_pred.list` (LDAK-KVIK) as an example. We may also use the REGENIE-auto-emitted `simu_geno_regenie_pred.list`.
+Null-model fitting and association testing run in one call. `--spasqr-taus` sets the quantile levels to test; `--pheno-transform int` must match the INT-transformed trait fed to LDAK-KVIK (see [Raw phenotypes](#raw-phenotypes-without-int) if you skip INT). One result file per trait: `spasqr_results.Quantitative1.SPAsqr`, `spasqr_results.Quantitative2.SPAsqr`.
 
-Below are the required and optional flags.
+## Output format
 
-**Required:**
-
-| Flag | What it does |
-| --- | --- |
-| `--method` | Selects the GRAB method to run; use `SPAsqr` to trigger SPA<sub>SQR</sub> and all of the `--spasqr-*` options below. |
-| `--bfile` | PLINK 1 genotype file set prefix (e.g. `simu_geno` for `simu_geno.{bed,bim,fam}`). PLINK 2 (`--pfile`), VCF (`--vcf`), and BGEN (`--bgen`) are also accepted — exactly one of the four is needed. |
-| `--pheno` | Phenotype file (e.g. `simu_geno_int.txt`). Starts with `FID IID` (or `IID`). `#FID #IID` and `#IID` also works. |
-| `--out` | Output prefix (e.g. `spasqr_results`). Each trait gets its own tab-delimited result file. |
-
-**Optional:**
-
-| Flag | Default | What it does |
-| --- | --- | --- |
-| `--pred-list` | — | Prediction list (e.g. `simu_geno_ldak_pred.list` for LDAK-KVIK or `simu_geno_regenie_pred.list` for REGENIE). Omit to run with no LOCO offset — valid but a lot less powerful. |
-| `--pheno-transform` | `int` | One of `int` / `standardize`. **Must match the transform used during PGS construction.** If `simu_geno_int.txt` is used to compute LOCO PGS, use `int`. With raw `simu_geno.pheno` fed to LDAK-KVIK or REGENIE, set this to `standardize`. |
-| `--pheno-name` | all trait columns | Comma-separated list of trait columns to analyze (e.g. `Quantitative1,Quantitative2`). |
-| `--covar` | — | Covariate file. Starts with `FID IID` (or `IID`). `#FID #IID` and `#IID` also works. May point to the same file as `--pheno`. |
-| `--covar-name` | — | Comma-separated list of covariate columns (e.g. `MALE,PC1,PC2,PC3,PC4`). |
-| `--spasqr-taus` | `0.1,0.3,0.5,0.7,0.9` | Quantile levels at which to test, comma-separated (max 20 levels). |
-| `--spasqr-h-scale` | `3` (score) / `5` (wald) | Bandwidth divisor (`h = IQR / k`). Larger value → less smoothing. |
-| `--threads` | `1` | Number of threads used for parallel computing (e.g. `8`). |
-
-**SNP filters:**
-
-| Flag | Default | What it does |
-| --- | --- | --- |
-| `--maf` | `1e-5` | Minimum minor allele frequency (e.g. `0.01`). |
-| `--mac` | `10` | Minimum minor allele count. |
-| `--geno` | `0.1` | Maximum per-variant missingness fraction. |
-| `--extract` | — | Restrict testing to the variant IDs listed in a file, one ID per line (e.g. `--extract snps.txt`). |
-| `--chr` | all autosomes | Comma-separated chromosomes to test (e.g. `1,2,5`). |
-
-
-GRAB writes one output file per phenotype:
-
-```
-spasqr_results.Quantitative1.SPAsqr
-spasqr_results.Quantitative2.SPAsqr
-```
-
-Each file has one row per variant. With nine quantiles it has 37 columns: 10 fixed leading columns, followed by three per-quantile blocks of nine columns each — `P_tau`, `Z_tau`, and `Z_Norm_tau` (10 + 3 × 9 = 37).
-
-Columns 1–10 — variant info, QC fields, and the combined $p$-value `P_CCT`:
+One row per variant. With nine quantiles there are 37 columns: 10 fixed columns, then three blocks of nine (`P_tau`, `Z_tau`, `Z_Norm_tau`).
 
 ```
 CHROM  POS     ID        REF  ALT  MISS_RATE  ALT_FREQ  MAC   HWE_P    P_CCT
@@ -213,15 +136,11 @@ CHROM  POS     ID        REF  ALT  MISS_RATE  ALT_FREQ  MAC   HWE_P    P_CCT
 10     122000  SNP_2170  A    G    0          0.267     2670  0.1933   1.60e-06
 ```
 
-Columns 11–19 — per-quantile $p$-values, $\tau = 0.1, 0.2, \ldots, 0.9$:
-
 ```
 P_tau0.1   P_tau0.2   P_tau0.3   P_tau0.4   P_tau0.5   P_tau0.6   P_tau0.7   P_tau0.8   P_tau0.9
 1.82e-06   8.23e-09   8.31e-09   3.32e-08   1.21e-07   3.21e-07   6.56e-07   9.79e-07   9.72e-07
 3.62e-08   8.94e-07   1.83e-06   3.21e-06   2.77e-06   2.20e-06   2.06e-06   2.05e-06   1.27e-06
 ```
-
-Columns 20–28 — per-quantile signed $Z$-scores `Z_tau`, made consistent with the saddlepoint $p$-value via `Z_tau = sign(Z_Norm_tau) × Φ⁻¹(1 − P_tau/2)`:
 
 ```
 Z_tau0.1  Z_tau0.2  Z_tau0.3  Z_tau0.4  Z_tau0.5  Z_tau0.6  Z_tau0.7  Z_tau0.8  Z_tau0.9
@@ -229,47 +148,21 @@ Z_tau0.1  Z_tau0.2  Z_tau0.3  Z_tau0.4  Z_tau0.5  Z_tau0.6  Z_tau0.7  Z_tau0.8  
 -5.51     -4.92     -4.78     -4.66     -4.70     -4.74     -4.75     -4.75     -4.84
 ```
 
-Columns 29–37 — per-quantile **raw** normal-approximation $Z$-scores `Z_Norm_tau0.1 … Z_Norm_tau0.9`. `Z_Norm_tau` is the original score statistic over its standard error, $S/\sqrt{\operatorname{Var}(S)}$, **before** the saddlepoint correction. The `Z_tau` columns above are instead made consistent with the saddlepoint $p$-value. For common variants the two are virtually identical (e.g. `SNP_1428` here: `Z_tau0.9 = +4.44` vs `Z_Norm_tau0.9 = +4.43`); they differ for rare variants, where the saddlepoint approximation has a more clear impact.
+| Columns | Meaning |
+| --- | --- |
+| `P_CCT` | Cauchy-combined $p$-value across all quantiles. |
+| `P_tau<τ>` | Saddlepoint $p$-value at each quantile. |
+| `Z_tau<τ>` | Signed $Z$-score consistent with `P_tau`: `sign(Z_Norm_tau) × Φ⁻¹(1 − P_tau/2)`. |
+| `Z_Norm_tau<τ>` | Raw score statistic $S/\sqrt{\operatorname{Var}(S)}$, before saddlepoint correction. Nearly identical to `Z_tau` for common variants; differs for rare ones. |
 
-### End-to-end recipes (with INT)
+## Other options
 
-LDAK-KVIK LOCO PGS with INT:
+### REGENIE instead of LDAK-KVIK
 
-```bash
-# 1. INT-transform the selected traits
-./grab2 --int-pheno --pheno simu_geno.pheno --pheno-name Quantitative1,Quantitative2 --out simu_geno_int
-
-# 2. Train the LOCO PGS on the INT-transformed Y
-./ldak6.2.linux \
-    --kvik-step1 ldak_step1 \
-    --bfile simu_geno \
-    --pheno simu_geno_int.txt --mpheno ALL \
-    --covar simu_geno.pheno   --covar-names MALE,PC1,PC2,PC3,PC4 \
-    --max-threads 8
-
-# 3. Build the LDAK pred-list
-cat > simu_geno_ldak_pred.list <<EOF
-Quantitative1   $(pwd)/ldak_step1.step1.pheno1.loco.prs
-Quantitative2   $(pwd)/ldak_step1.step1.pheno2.loco.prs
-EOF
-
-# 4. Run SPAsqr; --pheno-transform int is the default and matches the INT-trained PGS
-./grab2 --method SPAsqr \
-    --bfile simu_geno \
-    --pheno simu_geno_int.txt --pheno-name Quantitative1,Quantitative2 \
-    --covar simu_geno.pheno   --covar-name MALE,PC1,PC2,PC3,PC4 \
-    --pred-list simu_geno_ldak_pred.list \
-    --threads 8 \
-    --out spasqr_results
-```
-
-REGENIE LOCO PGS with INT:
+Replace steps 2–3 with a single REGENIE call; it writes the prediction list itself.
 
 ```bash
-# 1. INT-transform the selected traits
-./grab2 --int-pheno --pheno simu_geno.pheno --pheno-name Quantitative1,Quantitative2 --out simu_geno_int
-
-# 2. Train the LOCO PGS on the INT-transformed Y
+# 2. Train the LOCO PGS with REGENIE (writes simu_geno_regenie_pred.list)
 ./regenie \
     --step 1 \
     --bed simu_geno \
@@ -278,68 +171,66 @@ REGENIE LOCO PGS with INT:
     --bsize 1000 --threads 8 \
     --out simu_geno_regenie
 
-# 3. Run SPAsqr with REGENIE's native pred-list
+# 3. Run SPAsqr with REGENIE's prediction list
 ./grab2 --method SPAsqr \
     --bfile simu_geno \
     --pheno simu_geno_int.txt --pheno-name Quantitative1,Quantitative2 \
     --covar simu_geno.pheno   --covar-name MALE,PC1,PC2,PC3,PC4 \
     --pred-list simu_geno_regenie_pred.list \
+    --spasqr-taus 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9 \
+    --pheno-transform int \
     --threads 8 \
     --out spasqr_results
 ```
 
+REGENIE's `.loco` files are the transpose of LDAK-KVIK's (one row per chromosome, one column per subject, `FID_IID` joined). GRAB detects the format from the header.
 
-## GWAS using raw phenotype
+### Raw phenotypes (without INT)
 
-If it is desired to avoid INT, we feed the raw `simu_geno.pheno` directly to LDAK-KVIK or REGENIE during step 1. Before fitting the LOCO PGS, both LDAK-KVIK and REGENIE internally regress the covariates out of the trait and then standardize the residuals to mean zero and unit variance, so the LOCO PGS still live on a **standardized scale**, instead of the scale of the raw `Y` column. Thus, we should pass `--pheno-transform standardize` to GRAB at association testing so that the trait and the LOCO PGS live on the same scale.
-
-LDAK-KVIK LOCO PGS without INT:
+Skip step 1 and feed `simu_geno.pheno` to LDAK-KVIK or REGENIE directly. Both tools regress out covariates and standardize the residuals internally, so the LOCO PGS live on a standardized scale. Tell GRAB to put the trait on the same scale:
 
 ```bash
-# 1. Train the LOCO PGS on raw Y (--mpheno selects specific phenotype columns by position)
-./ldak6.2.linux \
-    --kvik-step1 ldak_step1 \
-    --bfile simu_geno \
-    --pheno simu_geno.pheno --mpheno ALL \
-    --covar simu_geno.pheno --covar-names MALE,PC1,PC2,PC3,PC4 \
-    --max-threads 8
-
-# 2. Build the LDAK pred-list
-cat > simu_geno_ldak_pred.list <<EOF
-Quantitative1   $(pwd)/ldak_step1.step1.pheno1.loco.prs
-Quantitative2   $(pwd)/ldak_step1.step1.pheno2.loco.prs
-EOF
-
-# 3. Run SPAsqr with --pheno-transform standardize
 ./grab2 --method SPAsqr \
     --bfile simu_geno \
     --pheno simu_geno.pheno --pheno-name Quantitative1,Quantitative2 \
     --covar simu_geno.pheno --covar-name MALE,PC1,PC2,PC3,PC4 \
     --pred-list simu_geno_ldak_pred.list \
     --pheno-transform standardize \
+    --spasqr-taus 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9 \
     --threads 8 \
     --out spasqr_results
 ```
 
-REGENIE LOCO PGS without INT:
+### `grab2 --method SPAsqr` flags
 
-```bash
-# 1. Train the LOCO PGS on raw Y
-./regenie \
-    --step 1 \
-    --bed simu_geno \
-    --phenoFile simu_geno.pheno --phenoColList Quantitative1,Quantitative2 \
-    --covarFile simu_geno.pheno --covarColList MALE,PC1,PC2,PC3,PC4 \
-    --bsize 1000 --threads 8 \
-    --out simu_geno_regenie
+Required:
 
-# 2. Run SPAsqr with REGENIE's native pred-list and --pheno-transform standardize
-./grab2 --method SPAsqr \
-    --bfile simu_geno \
-    --pheno simu_geno.pheno --pheno-name Quantitative1,Quantitative2 \
-    --covar simu_geno.pheno --covar-name MALE,PC1,PC2,PC3,PC4 \
-    --pred-list simu_geno_regenie_pred.list \
-    --pheno-transform standardize \
-    --threads 8 \
-    --out spasqr_results
-```
+| Flag | What it does |
+| --- | --- |
+| `--method SPAsqr` | Selects SPA<sub>SQR</sub>. |
+| `--bfile` | PLINK 1 prefix. `--pfile` (PLINK 2), `--vcf`, and `--bgen` are also accepted; exactly one is needed. |
+| `--pheno` | Phenotype file starting with `FID IID` or `IID` (`#FID`/`#IID` headers also work). |
+| `--out` | Output prefix. |
+
+Optional:
+
+| Flag | Default | What it does |
+| --- | --- | --- |
+| `--pred-list` | — | LOCO PGS prediction list. Omit to run without an offset (valid but much less powerful). |
+| `--pheno-transform` | `int` | `int` or `standardize`. **Must match the trait fed to the PGS software.** |
+| `--pheno-name` | all trait columns | Traits to test, comma-separated. |
+| `--covar` | — | Covariate file; may be the same file as `--pheno`. |
+| `--covar-name` | — | Covariate columns, comma-separated. |
+| `--spasqr-taus` | `0.1,0.3,0.5,0.7,0.9` | Quantile levels to test (max 20). |
+| `--spasqr-h-scale` | `3` | Bandwidth divisor, `h = IQR / k`. Larger = less smoothing. |
+| `--threads` | `1` | Number of threads. |
+
+SNP filters:
+
+| Flag | Default | What it does |
+| --- | --- | --- |
+| `--maf` | `1e-5` | Minimum minor allele frequency. |
+| `--mac` | `10` | Minimum minor allele count. |
+| `--geno` | `0.1` | Maximum per-variant missingness. |
+| `--extract` | — | File of variant IDs to test, one per line. |
+| `--chr` | all autosomes | Chromosomes to test, comma-separated. |
