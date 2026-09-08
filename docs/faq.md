@@ -29,6 +29,6 @@ It has to match the transform used during PGS construction:
 
 | PGS trained on … | `--pheno-transform` |
 | ---------------- | ------------------- |
-| INT $Y$ (recommended) | `int` (default) |
+| RINT $Y$ (recommended) | `int` (default) |
 | Raw $Y$ — LDAK-KVIK / REGENIE internally standardize | `standardize` |
 | No PGS (omitting `--pred-list`) | `standardize` |

@@ -12,7 +12,7 @@ Score mode (Workflows 1–2) gives calibrated $p$-values and $Z$-scores but no e
 
 ## Complete pipeline
 
-Assumes the INT phenotypes and prediction list from [Workflow 1]({{ site.baseurl }}/docs/workflow-1.html).
+Assumes the RINT phenotypes and prediction list from [Workflow 1]({{ site.baseurl }}/docs/workflow-1.html).
 
 ```bash
 # 1. List the variants to estimate, one ID per line
@@ -64,7 +64,7 @@ SE_tau0.1    ...  SE_tau0.9
 
 | Columns | Meaning |
 | --- | --- |
-| `BETA_tau<τ>` | Effect size at quantile $\tau$, on the transformed scale (INT scale under `--pheno-transform int`). |
+| `BETA_tau<τ>` | Effect size at quantile $\tau$, on the transformed scale (RINT scale under `--pheno-transform int`). |
 | `SE_tau<τ>` | Standard error of `BETA_tau<τ>`. |
 | `Z_tau<τ>`, `P_tau<τ>` | Wald $Z$-score and two-sided normal-approximation $p$-value. |
 

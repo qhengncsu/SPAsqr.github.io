@@ -15,7 +15,7 @@ In highly related cohorts the LOCO PGS offset alone may not calibrate the tests:
 Steps 1–3 are identical to Workflow 1; steps 4–5 are new.
 
 ```bash
-# 1. Inverse-normal-transform the traits
+# 1. Rank-based inverse-normal-transform the traits
 ./grab2 --int-pheno --pheno simu_geno.pheno --pheno-name Quantitative1,Quantitative2 --out simu_geno_int
 
 # 2. Train the LOCO PGS with LDAK-KVIK
