@@ -68,7 +68,7 @@ EOF
 ./grab2 --int-pheno --pheno simu_geno.pheno --pheno-name Quantitative1,Quantitative2 --out simu_geno_int
 ```
 
-Applies a rank-based inverse normal transformation (RINT) to each trait. In UK Biobank, RINT generally yields more associations than raw traits. The output `simu_geno_int.txt` keeps `FID IID` and replaces each trait column with its RINT version:
+Applies a rank-based inverse normal transformation (RINT) to each trait. In UK Biobank, RINT generally yields more associations than raw traits, possibly because the LOCO PGS explains more variance of the RINT-transformed trait. The output `simu_geno_int.txt` keeps `FID IID` and replaces each trait column with its RINT version:
 
 ```
 $ head -3 simu_geno_int.txt
