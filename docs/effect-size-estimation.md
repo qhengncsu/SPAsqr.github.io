@@ -8,7 +8,9 @@ has_children: false
 
 # **Effect-size estimation: `--spasqr-mode wald`**
 
-Score mode (Workflows 1–2) gives calibrated $p$-values and $Z$-scores but no effect sizes. **Wald mode** fits the smoothed QR model per variant and reports $\hat\gamma(\tau)$ with its standard error. Use it on a short list of variants, typically the genome-wide-significant hits from score mode.
+SPA<sub>SQR</sub>'s default mode, used in Workflows 1 and 2, is **genome-wide screening**: for each chromosome and each quantile level $\tau$ it fits one null smoothed quantile regression model without the variant, and then tests $H_0: \gamma(\tau) = 0$ for every variant on that chromosome with a score test. Because the null model does not depend on the variant, this is fast enough for millions of variants, and the saddlepoint approximation keeps the $p$-values calibrated for rare variants. However, a score test does not produce an estimate of the effect size $\gamma(\tau)$.
+
+To obtain effect sizes, SPA<sub>SQR</sub> provides a **Wald mode** (`--spasqr-mode wald`). For each variant and each $\tau$, it fits the full smoothed quantile regression model including the variant, and reports the estimated effect $\hat\gamma(\tau)$ together with its standard error and a Wald $p$-value. Since this requires one model fit per variant, Wald mode is intended for a short list of variants rather than the whole genome, typically the genome-wide-significant hits from score mode or a curated set of variants of interest.
 
 ## Complete pipeline
 
