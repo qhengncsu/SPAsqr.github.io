@@ -97,7 +97,7 @@ S00001  S00001  0.2954   0.3367   0.2901        0.3047
 S00002  S00002  -0.3886  -0.4240  -0.3571       -0.4109
 ```
 
-For simplicity we use the same genotype file for PGS training and association testing. In practice the two stages usually differ: PGS training typically uses a few hundred thousand genotyped SNPs, while association testing uses the full imputed set.
+For simplicity we use the same genotype file for LOCO PGS training and association testing. In practice the two stages usually differ: LOCO PGS training typically uses a few hundred thousand genotyped SNPs, while association testing uses the full imputed set.
 
 ### 3. Build the prediction list
 
@@ -217,7 +217,7 @@ Optional:
 | Flag | Default | What it does |
 | --- | --- | --- |
 | `--pred-list` | — | LOCO PGS prediction list. Omit to run without an offset (valid but much less powerful). |
-| `--pheno-transform` | `int` | Transformation GRAB applies to the trait: `int` or `standardize`. **Must match the transformation applied to the trait during PGS training.** Redundant when the input trait is already RINT-transformed, as in this workflow. |
+| `--pheno-transform` | `int` | Transformation GRAB applies to the trait: `int` or `standardize`. **Must match the transformation applied to the trait during LOCO PGS training.** Redundant when the input trait is already RINT-transformed, as in this workflow. |
 | `--pheno-name` | all trait columns | Traits to test, comma-separated. |
 | `--covar` | — | Covariate file; may be the same file as `--pheno`. |
 | `--covar-name` | — | Covariate columns, comma-separated. |

@@ -25,10 +25,10 @@ has_children: false
 
 ### Which `--pheno-transform` should I use?
 
-It has to match the transform used during PGS construction:
+It has to match the transform used during LOCO PGS construction:
 
-| PGS trained on … | `--pheno-transform` |
+| LOCO PGS trained on … | `--pheno-transform` |
 | ---------------- | ------------------- |
 | RINT $Y$ (recommended) | `int` (default) |
 | Raw $Y$ — LDAK-KVIK / REGENIE internally standardize | `standardize` |
-| No PGS (omitting `--pred-list`) | `standardize` |
+| No LOCO PGS (omitting `--pred-list`) | `standardize` |
