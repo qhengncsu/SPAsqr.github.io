@@ -217,7 +217,7 @@ Optional:
 | Flag | Default | What it does |
 | --- | --- | --- |
 | `--pred-list` | — | LOCO PGS prediction list. Omit to run without an offset (valid but much less powerful). |
-| `--pheno-transform` | `int` | Transformation GRAB applies to the trait: `int` or `standardize`. **Must match the transformation applied to the trait during PGS training.** |
+| `--pheno-transform` | `int` | Transformation GRAB applies to the trait: `int` or `standardize`. **Must match the transformation applied to the trait during PGS training.** Redundant when the input trait is already RINT-transformed, as in this workflow. |
 | `--pheno-name` | all trait columns | Traits to test, comma-separated. |
 | `--covar` | — | Covariate file; may be the same file as `--pheno`. |
 | `--covar-name` | — | Covariate columns, comma-separated. |
