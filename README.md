@@ -23,8 +23,8 @@ The pipeline is:
    covariates, subtracts the chromosome-specific LOCO PGS as an offset,
    fits the null SQR model per chromosome with bandwidth
    `h = IQR(Y - PGS) / k` (default `k = 3`; `--spasqr-h-scale`), applies SPA in the tails, and writes
-   per-phenotype results with per-tau p-values, Z-scores, and a
-   Cauchy-combined P_CCT.
+   per-phenotype results with per-tau -log10 p-values (LOG10P_tau),
+   Z-scores, and a Cauchy-combined LOG10P_CCT.
 
 4. **(Optional) Effect-size estimation** via `--spasqr-mode wald`.
 

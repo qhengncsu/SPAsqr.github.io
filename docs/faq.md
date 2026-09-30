@@ -25,10 +25,12 @@ has_children: false
 
 ### Which `--pheno-transform` should I use?
 
-It has to match the transform used during LOCO PGS construction:
+It has to put the trait on the same scale as the LOCO PGS:
 
 | LOCO PGS trained on … | `--pheno-transform` |
 | ---------------- | ------------------- |
 | RINT $Y$ (recommended) | `int` (default) |
-| Raw $Y$ — LDAK-KVIK / REGENIE internally standardize | `standardize` |
+| Raw $Y$, LDAK-KVIK — PGS on the original trait scale | `raw` |
+| Raw $Y$, REGENIE — PGS on a standardized scale | `standardize` |
 | No LOCO PGS (omitting `--pred-list`) | `standardize` |
+

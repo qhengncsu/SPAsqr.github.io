@@ -54,21 +54,23 @@ We then rerun GRAB with two changes from the Workflow 1 command: `--spasqr-mode 
 
 ## Output format
 
-GRAB writes one file per trait, `spasqr_effect.Quantitative1.SPAsqr` and `spasqr_effect.Quantitative2.SPAsqr`. With nine quantiles each file has 46 columns: 10 fixed columns followed by four blocks of nine per-quantile columns.
+GRAB writes one file per trait, `spasqr_effect.Quantitative1.SPAsqr` and `spasqr_effect.Quantitative2.SPAsqr`. With nine quantiles each file has 55 columns: 10 fixed columns followed by five blocks of nine per-quantile columns.
 
 ```
-CHROM  POS  ID  REF  ALT  MISS_RATE  ALT_FREQ  MAC  HWE_P  P_CCT
-P_tau0.1     ...  P_tau0.9
-Z_tau0.1     ...  Z_tau0.9
-BETA_tau0.1  ...  BETA_tau0.9
-SE_tau0.1    ...  SE_tau0.9
+CHROM  POS  ID  REF  ALT  MISS_RATE  ALT_FREQ  MAC  LOG10P_HWE  LOG10P_CCT
+LOG10P_tau0.1      ...  LOG10P_tau0.9
+Z_tau0.1           ...  Z_tau0.9
+BETA_tau0.1        ...  BETA_tau0.9
+SE_tau0.1          ...  SE_tau0.9
+SPA_STATUS_tau0.1  ...  SPA_STATUS_tau0.9
 ```
 
 | Columns | Meaning |
 | --- | --- |
 | `BETA_tau<τ>` | Effect size at quantile $\tau$, on the transformed scale (RINT scale under `--pheno-transform int`). |
 | `SE_tau<τ>` | Standard error of `BETA_tau<τ>`. |
-| `Z_tau<τ>`, `P_tau<τ>` | Wald $Z$-score and two-sided normal-approximation $p$-value. |
+| `Z_tau<τ>`, `LOG10P_tau<τ>` | Wald $Z$-score and two-sided normal-approximation $p$-value, reported as $-\log_{10}p$. `LOG10P_CCT` combines them across quantiles. |
+| `SPA_STATUS_tau<τ>` | `1` (normal reference) for every quantile that produced a test; `8` with all other cells `NA` when the sandwich variance is unusable. |
 
 ## Other options
 

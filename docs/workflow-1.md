@@ -128,32 +128,34 @@ Finally we run SPA<sub>SQR</sub>. Null-model fitting and association testing hap
 
 ## Output format
 
-Each result file has one row per variant. With nine quantiles it has 37 columns: 10 fixed columns with variant information and the combined $p$-value, followed by three blocks of nine per-quantile columns (`P_tau`, `Z_tau`, `Z_Norm_tau`).
+Each result file has one row per variant. With nine quantiles it has 46 columns: 10 fixed columns with variant information and the combined $p$-value, followed by four blocks of nine per-quantile columns (`LOG10P_tau`, `Z_tau`, `Z_Norm_tau`, `SPA_STATUS_tau`). All $p$-values are reported as $-\log_{10}p$, so larger is more significant; the genome-wide threshold $p < 5\times10^{-8}$ corresponds to `LOG10P > 7.30`, and the linear $p$-value is `10^(-LOG10P)`. Rows for `SNP_1428` and `SNP_2170` of `spasqr_results.Quantitative1.SPAsqr`:
 
 ```
-CHROM  POS     ID        REF  ALT  MISS_RATE  ALT_FREQ  MAC   HWE_P    P_CCT
-7      62000   SNP_1428  A    G    0          0.4624    4624  0.1246   3.96e-08
-10     122000  SNP_2170  A    G    0          0.267     2670  0.1933   1.60e-06
+CHROM  POS     ID        REF  ALT  MISS_RATE  ALT_FREQ  MAC   LOG10P_HWE  LOG10P_CCT
+7      62000   SNP_1428  A    G    0          0.4624    4624  0.904       7.178
+10     122000  SNP_2170  A    G    0          0.267     2670  0.714       5.639
 ```
 
 ```
-P_tau0.1   P_tau0.2   P_tau0.3   P_tau0.4   P_tau0.5   P_tau0.6   P_tau0.7   P_tau0.8   P_tau0.9
-1.82e-06   8.23e-09   8.31e-09   3.32e-08   1.21e-07   3.21e-07   6.56e-07   9.79e-07   9.72e-07
-3.62e-08   8.94e-07   1.83e-06   3.21e-06   2.77e-06   2.20e-06   2.06e-06   2.05e-06   1.27e-06
+LOG10P_tau0.1  LOG10P_tau0.2  LOG10P_tau0.3  LOG10P_tau0.4  LOG10P_tau0.5  LOG10P_tau0.6  LOG10P_tau0.7  LOG10P_tau0.8  LOG10P_tau0.9
+5.682          7.823          7.706          7.060          6.497          6.105          5.847          5.741          5.827
+6.374          6.140          5.180          4.184          3.491          3.200          3.258          3.480          3.434
 ```
 
 ```
 Z_tau0.1  Z_tau0.2  Z_tau0.3  Z_tau0.4  Z_tau0.5  Z_tau0.6  Z_tau0.7  Z_tau0.8  Z_tau0.9
-+4.77     +5.76     +5.76     +5.52     +5.29     +5.11     +4.97     +4.89     +4.89
--5.51     -4.92     -4.78     -4.66     -4.70     -4.74     -4.75     -4.75     -4.84
++4.75     +5.66     +5.61     +5.35     +5.11     +4.94     +4.82     +4.77     +4.81
+-5.06     -4.95     -4.51     -3.99     -3.60     -3.42     -3.45     -3.59     -3.56
 ```
 
 | Columns | Meaning |
 | --- | --- |
-| `P_CCT` | Cauchy-combined $p$-value across all quantiles. |
-| `P_tau<τ>` | Saddlepoint $p$-value at each quantile. |
-| `Z_tau<τ>` | Signed $Z$-score consistent with `P_tau`: `sign(Z_Norm_tau) × Φ⁻¹(1 − P_tau/2)`. |
+| `LOG10P_HWE` | $-\log_{10}$ of the Hardy–Weinberg equilibrium $p$-value. |
+| `LOG10P_CCT` | $-\log_{10}$ of the Cauchy-combined $p$-value across all quantiles. Computed in the log domain, so it stays finite even when $p$ would underflow below $10^{-308}$. |
+| `LOG10P_tau<τ>` | $-\log_{10}$ of the saddlepoint $p$-value at each quantile. |
+| `Z_tau<τ>` | Signed $Z$-score consistent with `LOG10P_tau`: `sign(Z_Norm_tau) × Φ⁻¹(1 − p/2)`. |
 | `Z_Norm_tau<τ>` | Raw score statistic $S/\sqrt{\operatorname{Var}(S)}$, before saddlepoint correction. Nearly identical to `Z_tau` for common variants; differs for rare ones. |
+| `SPA_STATUS_tau<τ>` | How the $p$-value at that quantile was obtained: `0` saddlepoint; `1` normal approximation, by design when $\lvert Z\rvert$ is below the saddlepoint cutoff (`--spa-z-threshold`, default 2); `2` saddlepoint in a numerically degenerate but valid limit; `3`–`6` saddlepoint failed and the normal tail was substituted; `7`–`8` no test (`LOG10P` is `NA`). Keep rows with `SPA_STATUS_tau ≤ 2` when judging significance. |
 
 ## Other options
 
@@ -187,7 +189,9 @@ REGENIE's `.loco` files are the transpose of LDAK-KVIK's: one row per chromosome
 
 ### Raw phenotypes (without RINT)
 
-To avoid RINT, skip step 1 and feed the raw `simu_geno.pheno` to LDAK-KVIK or REGENIE directly. Both tools regress out the covariates and standardize the residuals internally, so the LOCO PGS live on a standardized scale. Pass `--pheno-transform standardize` so that GRAB puts the trait on the same scale:
+To avoid RINT, skip step 1 and feed the raw `simu_geno.pheno` to LDAK-KVIK or REGENIE directly. The two tools report their LOCO PGS on different scales, so `--pheno-transform` depends on which one you used.
+
+**LDAK-KVIK** reports the LOCO PGS on the original trait scale. Pass `--pheno-transform raw` so that GRAB leaves the trait untouched:
 
 ```bash
 ./grab2 --method SPAsqr \
@@ -195,6 +199,20 @@ To avoid RINT, skip step 1 and feed the raw `simu_geno.pheno` to LDAK-KVIK or RE
     --pheno simu_geno.pheno --pheno-name Quantitative1,Quantitative2 \
     --covar simu_geno.pheno --covar-name MALE,PC1,PC2,PC3,PC4 \
     --pred-list simu_geno_ldak_pred.list \
+    --pheno-transform raw \
+    --spasqr-taus 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9 \
+    --threads 8 \
+    --out spasqr_results
+```
+
+**REGENIE** regresses out the covariates and scales the residuals to unit variance, so its LOCO PGS live on a standardized scale. Pass `--pheno-transform standardize`:
+
+```bash
+./grab2 --method SPAsqr \
+    --bfile simu_geno \
+    --pheno simu_geno.pheno --pheno-name Quantitative1,Quantitative2 \
+    --covar simu_geno.pheno --covar-name MALE,PC1,PC2,PC3,PC4 \
+    --pred-list simu_geno_regenie_pred.list \
     --pheno-transform standardize \
     --spasqr-taus 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9 \
     --threads 8 \
@@ -217,7 +235,7 @@ Optional:
 | Flag | Default | What it does |
 | --- | --- | --- |
 | `--pred-list` | — | LOCO PGS prediction list. Omit to run without an offset (valid but much less powerful). |
-| `--pheno-transform` | `int` | Transformation GRAB applies to the trait: `int` or `standardize`. **Must match the transformation applied to the trait during LOCO PGS training.** Redundant when the input trait is already RINT-transformed, as in this workflow. |
+| `--pheno-transform` | `int` | Transformation GRAB applies to the trait: `int`, `standardize`, or `raw` (none). **Must match the transformation applied to the trait during LOCO PGS training.** Redundant when the input trait is already RINT-transformed, as in this workflow. |
 | `--pheno-name` | all trait columns | Traits to test, comma-separated. |
 | `--covar` | — | Covariate file; may be the same file as `--pheno`. |
 | `--covar-name` | — | Covariate columns, comma-separated. |
