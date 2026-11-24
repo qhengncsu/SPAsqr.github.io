@@ -30,4 +30,4 @@ If you supply a LOCO PGS, use the same phenotype file and covariates you used fo
 - The **REGENIE LOCO PGS** is on the scale of the covariate-adjusted, unit-variance trait. GRAB standardizes and rescales the phenotype automatically. If you specify a transformation other than `standardize`, GRAB overrides it and issues a warning.
 - **Without a LOCO PGS**, GRAB applies RINT by default (`int`).
 
-See [LOCO PGS scale]({{ site.baseurl }}/docs/workflow-1.html#loco-pgs-scale) for how GRAB matches the phenotype to the LOCO PGS from each program.
+See the [transformation table]({{ site.baseurl }}/docs/workflow-1.html#loco-pgs-scale) for the phenotype file and option to use in each case.

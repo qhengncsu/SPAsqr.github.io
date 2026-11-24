@@ -122,7 +122,7 @@ The **prediction list** tells GRAB where to find each trait's LOCO PGS file. It 
     --out spasqr_results
 ```
 
-Use the same phenotype file you used to train the LOCO PGS (see [LOCO PGS scale](#loco-pgs-scale)), and specify the quantiles to test with `--spasqr-taus`. A single GRAB command fits the null models, tests the variants, and writes a result file for each trait. In this example, the files are `spasqr_results.Quantitative1.SPAsqr` and `spasqr_results.Quantitative2.SPAsqr`.
+Use the same phenotype file you used to train the LOCO PGS (see the [transformation table](#loco-pgs-scale)), and specify the quantiles to test with `--spasqr-taus`. A single GRAB command fits the null models, tests the variants, and writes a result file for each trait. In this example, the files are `spasqr_results.Quantitative1.SPAsqr` and `spasqr_results.Quantitative2.SPAsqr`.
 
 ## Output format
 
@@ -183,16 +183,7 @@ REGENIE writes both the LOCO PGS and the prediction list, so one command replace
     --out spasqr_results
 ```
 
-In REGENIE's `.loco` files, each row is a chromosome and each column is a participant, the reverse of the layout in LDAK-KVIK. REGENIE joins `FID` and `IID` with an underscore. GRAB recognizes the format from the header and automatically handles the difference in [LOCO PGS scale](#loco-pgs-scale).
-
-### LOCO PGS scale
-
-The phenotype and the LOCO PGS must be in the same scale, and LDAK-KVIK and REGENIE differ slightly in how they scale the LOCO PGS. Give GRAB the same phenotype file and covariates you used for training the LOCO PGS, especially if you applied RINT before training.
-
-- **LDAK-KVIK** reports the LOCO PGS on the training phenotype scale. GRAB uses the phenotype as supplied.
-- **REGENIE** reports the LOCO PGS in units of the covariate-adjusted residual standard deviation. GRAB automatically rescales the phenotype to match.
-
-Without `--pred-list`, GRAB applies RINT by default. To use the phenotype as supplied, set `--pheno-transform raw`.
+In REGENIE's `.loco` files, each row is a chromosome and each column is a participant, the reverse of the layout in LDAK-KVIK. REGENIE joins `FID` and `IID` with an underscore. GRAB recognizes the format from the header and selects the corresponding [phenotype transformation](#loco-pgs-scale).
 
 ### Raw phenotypes (without RINT)
 
@@ -212,6 +203,7 @@ To analyze the traits on their original scale, skip step 1. Use `simu_geno.pheno
 Make sure the prediction list points to the LOCO PGS trained on the raw traits.
 
 The table below summarizes how to choose the phenotype file and transformation option for analyses with or without RINT.
+{: #loco-pgs-scale }
 
 | Apply RINT? | LOCO PGS supplied via `--pred-list` | File to pass to `--pheno` | `--pheno-transform` |
 |---|---|---|---|
@@ -238,7 +230,7 @@ Optional:
 | Flag | Default | What it does |
 | --- | --- | --- |
 | `--pred-list` | — | LOCO PGS prediction list. Omit to run without an offset. |
-| `--pheno-transform` | depends on the LOCO PGS | Transformation GRAB applies to the trait: `int`, `standardize`, or `raw` (none). Defaults to `raw` with an LDAK-KVIK LOCO PGS and to `int` without `--pred-list`; always `standardize` with a REGENIE LOCO PGS. See [LOCO PGS scale](#loco-pgs-scale). |
+| `--pheno-transform` | depends on the LOCO PGS | Transformation GRAB applies to the trait: `int`, `standardize`, or `raw` (none). Defaults to `raw` with an LDAK-KVIK LOCO PGS and to `int` without `--pred-list`; always `standardize` with a REGENIE LOCO PGS. See the [transformation table](#loco-pgs-scale). |
 | `--pheno-name` | all trait columns | Traits to test, comma-separated. |
 | `--covar` | — | Covariate file; may be the same file as `--pheno`. |
 | `--covar-name` | — | Covariate columns, comma-separated. |
