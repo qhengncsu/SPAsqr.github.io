@@ -187,7 +187,7 @@ In REGENIE's `.loco` files, each row is a chromosome and each column is a partic
 
 ### LOCO PGS scale
 
-The phenotype and the LOCO PGS must be in the same scale. Give GRAB the same phenotype file and covariates you used for training, even if you applied RINT before training.
+The phenotype and the LOCO PGS must be in the same scale. Give GRAB the same phenotype file and covariates you used for training the LOCO PGS, even if you applied RINT before training.
 
 - **LDAK-KVIK** reports the LOCO PGS on the training phenotype scale. GRAB uses the phenotype as supplied by default.
 - **REGENIE** reports the LOCO PGS in units of the covariate-adjusted residual standard deviation. GRAB automatically rescales the phenotype to match.
