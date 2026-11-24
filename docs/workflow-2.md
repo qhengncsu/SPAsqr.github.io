@@ -8,13 +8,15 @@ has_children: false
 
 # **Workflow 2: LOCO PGS + GRM + SPA<sub>SQR</sub>**
 
-When the cohort is highly related, the LOCO PGS offset alone may not be enough to calibrate the tests. REGENIE's LOCO PGS is usually less predictive than LDAK-KVIK's, so it may not fully remove the type-I inflation caused by relatedness; LDAK-KVIK's LOCO PGS, on the other hand, may over-correct and deflate the test statistics.
+In cohorts with strong relatedness, a LOCO PGS offset alone may leave the tests poorly calibrated. REGENIE's LOCO PGS is usually less predictive than LDAK-KVIK's, so relatedness can still inflate the type I error rate. With LDAK-KVIK's LOCO PGS, the adjustment can go too far and deflate the test statistics.
 
-To handle this, SPA<sub>SQR</sub> can take a **sparse genetic relationship matrix (GRM)** as an additional input. The GRM enters only the variance of the score statistic, where it accounts for the correlation between related subjects, so that the null distribution is better calibrated under strong relatedness. We do not recommend the GRM for admixed cohorts, because for admixed individuals the GRM is confounded with population structure. This page shows how to build a sparse GRM with PLINK 2 and add it to the pipeline of [Workflow 1]({{ site.baseurl }}/docs/workflow-1.html).
+In this workflow, we add a **sparse genetic relationship matrix (GRM)** to account for correlation between related participants. SPA<sub>SQR</sub> uses the GRM only when estimating the variance of the score statistic. This improves calibration under strong relatedness. For admixed cohorts, we do not recommend adding the GRM because population structure can confound estimates of relatedness.
+
+The example below builds a sparse GRM with PLINK 2 and adds it to [Workflow 1]({{ site.baseurl }}/docs/workflow-1.html).
 
 ## Complete pipeline
 
-Steps 1–3 are identical to Workflow 1. Steps 4 and 5 are new.
+Follow steps 1–3 of Workflow 1 to prepare the LOCO PGS. In steps 4 and 5, build the sparse GRM and include it in the association test.
 
 ```bash
 # 1. Rank-based inverse-normal-transform the traits
@@ -67,9 +69,9 @@ EOF
     --out simu_geno
 ```
 
-We compute the sparse GRM with PLINK 2, which has supported this since late 2025 (GCTA computes the same GRM, but more slowly). `--maf 0.01` restricts the computation to common variants, and `--make-grm-sparse 0.05` keeps only relatedness coefficients above 0.05 and zeroes the rest.
+PLINK 2 has supported sparse GRMs since late 2025. GCTA can compute the same matrix, though it takes longer. We use `--maf 0.01` to build the GRM from common variants. The option `--make-grm-sparse 0.05` retains relatedness coefficients above 0.05 and sets the rest to zero.
 
-PLINK 2 writes `simu_geno.grm.sp` together with the companion ID file `simu_geno.grm.id`. Each row of `.grm.sp` holds a pair of **0-based** subject indices and their relatedness coefficient, where index $i$ refers to the $(i+1)$-th row of `.grm.id`:
+PLINK 2 writes the matrix to `simu_geno.grm.sp` and the participant IDs to `simu_geno.grm.id`. Each row of `.grm.sp` contains two participant indices and their relatedness coefficient. The indices start at zero, so index $i$ refers to row $i+1$ in `.grm.id`.
 
 ```
 $ head simu_geno.grm.sp
@@ -94,17 +96,17 @@ $ head simu_geno.grm.sp
     --out spasqr_results
 ```
 
-The only change from Workflow 1 is the added `--sp-grm-plink2 simu_geno.grm.sp`. GRAB finds `simu_geno.grm.id` from the same prefix. The output format is the same as in Workflow 1.
+Add `--sp-grm-plink2 simu_geno.grm.sp` to the command from Workflow 1. GRAB uses the shared file prefix to find `simu_geno.grm.id` and writes results in the same format as in Workflow 1.
 
 ## Other options
 
 ### REGENIE instead of LDAK-KVIK
 
-Train the LOCO PGS with REGENIE as described in Workflow 1, then pass `--pred-list simu_geno_regenie_pred.list` in step 5. Everything else stays the same.
+If you train the scores with REGENIE as described in Workflow 1, use `--pred-list simu_geno_regenie_pred.list` in step 5. This is the only change you need to make.
 
 ### GRM from other tools: `--sp-grm-grab`
 
-If the GRM was computed by a tool other than PLINK 2, write it as a single IID-keyed text file and pass it with `--sp-grm-grab` instead of `--sp-grm-plink2`. The file looks like this:
+If you used another tool to build the GRM, you can supply a single text file with participant IDs using `--sp-grm-grab` in place of `--sp-grm-plink2`.
 
 ```
 $ head simu_geno.grm.grab
@@ -115,7 +117,7 @@ IID_3   IID_0   0.5012
 IID_4   IID_3   0.2503
 ```
 
-The file is tab-delimited with the header `IID1 IID2 VALUE`, where the IIDs match the `.fam` file, so no companion `.grm.id` is needed. It lists each related pair once (GRAB symmetrizes the matrix) plus the diagonal entries; any pair not listed is treated as zero.
+Use a tab-delimited file with the header `IID1 IID2 VALUE`. The IDs must match those in the `.fam` file, so a separate `.grm.id` file is unnecessary. Include the diagonal entries and list each related pair once. GRAB fills in the symmetric entries and treats unlisted pairs as zero.
 
 ```bash
 ./grab2 --method SPAsqr \

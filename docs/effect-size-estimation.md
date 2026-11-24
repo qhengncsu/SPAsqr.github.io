@@ -8,13 +8,13 @@ has_children: false
 
 # **Effect-size estimation: `--spasqr-mode wald`**
 
-SPA<sub>SQR</sub>'s default mode, used in Workflows 1 and 2, is **genome-wide screening**: for each chromosome and each quantile level $\tau$ it fits one null smoothed quantile regression model without the variant, and then tests $H_0: \gamma(\tau) = 0$ for every variant on that chromosome with a score test. Because the null model does not depend on the variant, this is fast enough for millions of variants, and the saddlepoint approximation keeps the $p$-values calibrated for rare variants. However, a score test does not produce an estimate of the effect size $\gamma(\tau)$.
+Workflows 1 and 2 use **score mode** to screen the whole genome. For each chromosome and each quantile $\tau$, GRAB fits a null smoothed quantile regression model without the variant. It uses that model to test $H_0: \gamma(\tau) = 0$ for every variant on the chromosome. Reusing the null model makes it practical to test millions of variants, and the saddlepoint approximation keeps rare-variant $p$-values calibrated. The score test gives a $p$-value but does not estimate the effect size.
 
-To obtain effect sizes, SPA<sub>SQR</sub> provides a **Wald mode** (`--spasqr-mode wald`). For each variant and each $\tau$, it fits the full smoothed quantile regression model including the variant, and reports the estimated effect $\hat\gamma(\tau)$ together with its standard error and a Wald $p$-value. It also tests whether the effect is the same at all quantiles (a heterogeneity test). Since this requires one model fit per variant, Wald mode is intended for a short list of variants rather than the whole genome, typically the genome-wide-significant hits from score mode or a curated set of variants of interest.
+Use **Wald mode** (`--spasqr-mode wald`) to estimate effects at a short list of variants, such as genome-wide significant hits from score mode or variants of particular interest. For each variant and quantile, GRAB fits the full model with the variant as a covariate. It reports the estimated effect $\hat\gamma(\tau)$, its standard error, and a Wald $p$-value. It also tests whether the effect is the same across quantiles. These additional model fits make a genome-wide run computationally expensive.
 
 ## Complete pipeline
 
-Here we assume that the RINT-transformed phenotype file `simu_geno_int.txt` and the prediction list `simu_geno_ldak_pred.list` from [Workflow 1]({{ site.baseurl }}/docs/workflow-1.html) are already in place.
+This example uses the phenotype file after RINT (`simu_geno_int.txt`) and the prediction list (`simu_geno_ldak_pred.list`) from [Workflow 1]({{ site.baseurl }}/docs/workflow-1.html).
 
 ```bash
 # 1. List the variants to estimate, one ID per line
@@ -45,15 +45,15 @@ EOF
 
 ### 1. Variant list
 
-We first write a plain-text file with one variant ID per line, matching the `ID` column of the `.bim` file. The example file is available at [`data/simu_geno_wald_extract`](https://github.com/qhengncsu/SPAsqr.github.io/tree/main/data).
+Create a text file with one variant ID per line. The IDs must match the `ID` column in the `.bim` file. The example list is available in [`data/simu_geno_wald_extract`](https://github.com/qhengncsu/SPAsqr.github.io/tree/main/data).
 
 ### 2. Wald-mode run
 
-We then rerun GRAB with three changes from the Workflow 1 command: `--spasqr-mode wald` switches to effect-size estimation, `--spasqr-h-scale 5` sets a narrower bandwidth to reduce smoothing bias, and `--extract` restricts the run to the listed variants. All other flags, including `--spasqr-taus`, `--pred-list`, and `--sp-grm-*`, work exactly as in score mode.
+Start with the command from Workflow 1. Use `--spasqr-mode wald` to estimate effect sizes and `--extract` to select the variants in your list. We use a narrower bandwidth (`--spasqr-h-scale 5`) to reduce smoothing bias. The other options, including `--spasqr-taus`, `--pred-list`, and `--sp-grm-*`, work the same way as in score mode.
 
 ## Output format
 
-GRAB writes one file per trait, `spasqr_effect.Quantitative1.SPAsqr` and `spasqr_effect.Quantitative2.SPAsqr`. With nine quantiles the default output has 41 columns: 10 fixed columns, three blocks of nine per-quantile columns, and four columns for the heterogeneity test.
+GRAB writes one file per trait. Here the files are `spasqr_effect.Quantitative1.SPAsqr` and `spasqr_effect.Quantitative2.SPAsqr`. With nine quantiles, the default output has 41 columns. The first 10 are fixed. The next three sets of nine give the effects, standard errors, and Wald $p$-values at each quantile. The final four columns report the results of the heterogeneity test.
 
 ```
 CHROM  POS  ID  REF  ALT  MISS_RATE  ALT_FREQ  MAC  LOG10P_HWE  LOG10P_CCT
@@ -74,9 +74,9 @@ As in score mode, `--output-z` adds the optional `Z_tau` block, for 50 columns i
 | `HET_Q`, `LOG10P_HET` | Wald statistic for that hypothesis and its $p$-value, reported as $-\log_{10}p$. With $K$ quantiles, `HET_Q` follows a $\chi^2$ distribution with $K-1$ degrees of freedom when the effect is the same at all quantiles. |
 | `Z_tau<τ>` | Written with `--output-z`. Wald $Z$-score. |
 
-The heterogeneity test relies on the asymptotic normality of the effect estimates and may not be well calibrated for rare variants, so it is run only for variants with MAF at least `--spasqr-het-min-maf` (default 0.01). Below this threshold, `BETA_HOM`, `SE_HOM`, `HET_Q`, and `LOG10P_HET` are `NA`; the per-quantile results are unaffected.
+The heterogeneity test assumes that the effect estimates are approximately normally distributed. For rare variants this approximation can give poorly calibrated $p$-values. GRAB therefore runs the test only for variants with MAF at or above `--spasqr-het-min-maf` (default 0.01). Below that threshold, GRAB reports `NA` for `BETA_HOM`, `SE_HOM`, `HET_Q`, and `LOG10P_HET`. It still reports the per-quantile results as usual.
 
-Plotting `BETA_tau` against the quantile level with error bars of ±1.96 × `SE_tau` gives the quantile-effect profile of a variant.
+To see how the estimated effect varies across quantiles, plot `BETA_tau` against the quantile level and draw error bars at ±1.96 × `SE_tau` around each estimate.
 
 ## Other options
 

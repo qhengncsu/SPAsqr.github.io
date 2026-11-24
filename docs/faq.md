@@ -10,14 +10,13 @@ has_children: false
 
 ## Data input and missing values
 
-### How does GRAB represent and handle missing phenotype and covariate values?
+### How does GRAB handle missing phenotypes and covariates?
+{: #how-does-grab-represent-and-handle-missing-phenotype-and-covariate-values }
 
-- **Missing tokens.** A phenotype / covariate cell is read as missing if it
-  is `NA`, `na`, `NaN`, `nan`, `.`, `-`, or blank.
-- **Phenotype** — handled per trait: a subject missing a trait is dropped
-  from *that* trait only (never imputed) and still contributes to others.
-- **Covariate** — mean-imputed per column; no subject is dropped for a
-  missing covariate (a fully-missing column is an error).
+GRAB treats a blank cell or any of the following values as missing: `NA`, `na`, `NaN`, `nan`, `.`, or `-`.
+
+- **Phenotypes.** GRAB analyzes each trait separately. If a participant is missing one trait, GRAB excludes them from that analysis only. It does not impute missing phenotypes.
+- **Covariates.** GRAB replaces a missing value with the mean of that covariate, so the participant stays in the analysis. If the entire column is missing, GRAB reports an error.
 
 ---
 
@@ -25,13 +24,13 @@ has_children: false
 
 ### Which `--pheno-transform` should I use?
 
-In most cases, none. Pass GRAB the same phenotype file and covariates that were used to train the LOCO PGS; GRAB detects the LOCO file format and puts the trait on the scale of the LOCO PGS:
+In most cases, you can omit this option. Supply the phenotype file and covariates you used to train the LOCO PGS. GRAB detects the prediction file format and puts the trait on the appropriate scale.
 
 | LOCO PGS from | Transformation GRAB applies |
 | ---------------- | ------------------- |
-| LDAK-KVIK — PGS on the scale of the training trait | `raw` by default (trait used as supplied); an explicit `--pheno-transform` is honored |
-| REGENIE — PGS on the scale of the covariate-adjusted, unit-variance trait | always `standardize`, followed by division by the standard deviation of the trait's residuals on the covariates; other values are overridden with a warning |
-| No LOCO PGS (omitting `--pred-list`) | `int` by default |
+| LDAK-KVIK (PGS on the training trait scale) | GRAB uses the trait as supplied (`raw`) unless you specify a transformation with `--pheno-transform`. |
+| REGENIE (PGS on the scale of the covariate-adjusted, unit-variance trait) | GRAB applies `standardize`, then divides the trait by the standard deviation of its residuals from regression on the covariates. If you request a different transformation, GRAB overrides it and issues a warning. |
+| No LOCO PGS (`--pred-list` omitted) | GRAB applies `int` by default. |
 
 See [LOCO PGS scale]({{ site.baseurl }}/docs/workflow-1.html#loco-pgs-scale) for details.
 

@@ -8,11 +8,11 @@ has_children: false
 
 # **Installation**
 
-SPA<sub>SQR</sub> ships as the `SPAsqr` method of the [**GRAB**](https://github.com/GeneticAnalysisinBiobanks/GRAB) C++ program. To install GRAB, there are mainly two options.
+SPA<sub>SQR</sub> is available as the `SPAsqr` method in [**GRAB**](https://github.com/GeneticAnalysisinBiobanks/GRAB). You can build GRAB from source or download the executable for your platform.
 
 ## Option 1 — Build from source (recommended)
 
-GRAB is self-contained — all third-party libraries are bundled in the source tree, so the only requirements are a (reasonably new) C++17 compiler and GNU `make`. Building from source produces a binary that uses the best available SIMD instruction set on your CPU (AVX2 / AVX-512 on x86, NEON on ARM).
+To build GRAB, you need a compiler that supports C++17 and GNU `make`. The source includes all third-party libraries. Building on your own machine lets GRAB use the best SIMD instruction set your CPU supports (AVX2 or AVX-512 on x86, NEON on ARM).
 
 ```bash
 git clone --depth=1 https://github.com/GeneticAnalysisinBiobanks/GRAB.git
@@ -23,11 +23,11 @@ build/grab2 --version
 
 ## Option 2 — Prebuilt binary
 
-Download the archive for your platform from the [GRAB Releases page](https://github.com/GeneticAnalysisinBiobanks/GRAB/releases/latest). Builds are provided for `linux-x86_64`, `linux-aarch64`, `macos-arm64`, and `windows-x86_64`. 
+Download the archive for your platform from the [GRAB releases page](https://github.com/GeneticAnalysisinBiobanks/GRAB/releases/latest). Prebuilt binaries are available for `linux-x86_64`, `linux-aarch64`, `macos-arm64`, and `windows-x86_64`.
 
 ## External tools
 
-Our workflows call three external programs. The easiest way to install them:
+The tools you need depend on your workflow. Use LDAK-KVIK or REGENIE to train the LOCO polygenic scores. Workflow 2 also uses PLINK 2 to build a sparse GRM.
 
 - [**LDAK-KVIK**](https://dougspeed.com/ldak-kvik/) — download the prebuilt binary from the LDAK site.
 - [**REGENIE**](https://rgcgithub.github.io/regenie/) — `conda install -c conda-forge -c bioconda regenie`.

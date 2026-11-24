@@ -8,53 +8,29 @@ permalink: /
 
 # **SPA<sub>SQR</sub>**
 
-SPA<sub>SQR</sub> is a fast, robust framework for **quantile regression
-GWAS** on quantitative traits at biobank scale. It is implemented as the
-`SPAsqr` method of the
-[**GRAB**](https://github.com/GeneticAnalysisinBiobanks/GRAB) command-line
-binary — a single C++ executable that runs on Linux, macOS, and Windows.
+SPA<sub>SQR</sub> uses smoothed quantile regression to test genetic variants for association with quantitative traits in biobank-scale studies. It is fast and robust, and runs as the `SPAsqr` method in [**GRAB**](https://github.com/GeneticAnalysisinBiobanks/GRAB), a single C++ executable for Linux, macOS, and Windows.
 
 ## What is quantile regression GWAS?
 
-- **Linear GWAS** models the **mean** of a trait — one average effect per
-  variant.
-- **Quantile regression (QR)** models the trait's **quantiles** — so a
-  variant's effect can change across the phenotype distribution.
-- This reveals **quantile-dependent effects** (subgroup-specific, heterogeneous effects) that mean-based GWAS
-  dilutes or misses entirely.
+A linear GWAS estimates the average effect of each variant on a trait. Quantile regression (QR) estimates its effect at different points in the trait distribution. For example, a variant may have a stronger effect at the upper quantiles than near the median. Looking across quantiles can reveal heterogeneous or subgroup-specific effects that are hard to detect from the mean alone.
 
 ## Why SPA<sub>SQR</sub>?
 
-- **Detects effects linear GWAS misses** — tests many quantiles at once
-  and combines them into one $p$-value via the Cauchy combination test.
-- **Calibrated for rare variants** — saddlepoint approximation keeps
-  $p$-values accurate for rare variants.
-- **Handles relatedness** — uses LOCO polygenic scores as an offset, with
-  an optional sparse genetic relationship matrix for further variance calibration.
-- **More power from smoothing** — convolution-smoothed QR lowers
-  variance, offering greater association power than non-smooth QR.
-- **Biobank-scale speed** — multithreaded C++ implementation that rivals REGENIE and
-  LDAK-KVIK in efficiency.
+- **Association across quantiles.** SPA<sub>SQR</sub> tests for association at several quantiles and combines their $p$-values into one $p$-value per variant using the Cauchy combination test.
+- **Rare variants.** A saddlepoint approximation keeps association $p$-values calibrated for rare variants.
+- **Relatedness.** Leave-one-chromosome-out (LOCO) polygenic scores serve as an offset. An optional sparse genetic relationship matrix (GRM) provides further variance calibration.
+- **Power.** Convolution smoothing reduces variance and improves power compared with unsmoothed quantile regression.
+- **Speed.** The multithreaded C++ implementation is comparable in efficiency to REGENIE and LDAK-KVIK.
 
 ![SPASQR association results for glucose in UK Biobank](docs/assets/images/glu_combined_leadb.png)
 
 ## Pipeline
 
-1. **Workflow 1 — LOCO PGS + SPA<sub>SQR</sub>.** Train 
-   LOCO polygenic scores with
-   [LDAK-KVIK](https://dougspeed.com/ldak-kvik/) or
-   [REGENIE](https://rgcgithub.github.io/regenie/), then run
-   `grab --method SPAsqr` with `--pred-list`. The recommended path for
-   cohorts with low relatedness.
+1. **Workflow 1 — LOCO PGS + SPA<sub>SQR</sub>.** For cohorts with little relatedness, we recommend training LOCO polygenic scores with [LDAK-KVIK](https://dougspeed.com/ldak-kvik/) or [REGENIE](https://rgcgithub.github.io/regenie/), then passing them to `grab --method SPAsqr` with `--pred-list`.
 
-2. **Workflow 2 — LOCO PGS + GRM + SPA<sub>SQR</sub>.** In addition to the
-   LOCO PGS, build a sparse genetic relationship matrix using
-   [PLINK 2](https://www.cog-genomics.org/plink/2.0/), and pass it via `--sp-grm-plink2` so that the
-   score-statistic variance takes relatedness into account. Recommended for
-   cohorts with strong relatedness.
+2. **Workflow 2 — LOCO PGS + GRM + SPA<sub>SQR</sub>.** For cohorts with strong relatedness, we recommend adding a sparse GRM to account for relatedness when estimating the variance of the score statistic. Build the matrix with [PLINK 2](https://www.cog-genomics.org/plink/2.0/) and pass it to GRAB with `--sp-grm-plink2`. For admixed cohorts, we recommend using the scores alone because the GRM can also reflect population structure.
 
-3. **(Optional) Effect-size estimation.** Re-run with
-   `--spasqr-mode wald` to obtain effect size estimates and their standard errors, and to test whether the effect differs across quantiles.
+3. **Effect-size estimation (optional).** For selected variants, run GRAB with `--spasqr-mode wald` to estimate the effect and its standard error at each quantile and to test whether the effect varies across quantiles.
 
 ## Where to go next
 
@@ -64,9 +40,9 @@ binary — a single C++ executable that runs on Linux, macOS, and Windows.
 - [Effect-size estimation]({{ site.baseurl }}/docs/effect-size-estimation.html) 
 - [FAQ]({{ site.baseurl }}/docs/faq.html)
 
-## AI agents and LLMs can help you!
+## Getting help
+{: #ai-agents-and-llms-can-help-you }
 
-If you encounter difficulties installing or using SPA<sub>SQR</sub>, in the age of AI agents, simply send the URL of this tutorial, and your error message, to Claude Code or Codex, and most likely they can 
-resolve the issue for you! We have asked Claude Code and Codex to install GRAB and replicate the tutorial. The only thing we provided is the URL of this site, and they both successfully replicated every example command we provided. 
+If you run into trouble installing GRAB or running an example, try sharing the tutorial URL and the error message with Claude Code or Codex. When we tested them, each tool was able to install GRAB and run every example using just the URL.
 
-However, bug reports and suggestions are always welcome at heng.qiang6@gmail.com.
+We welcome bug reports and suggestions at heng.qiang6@gmail.com.
