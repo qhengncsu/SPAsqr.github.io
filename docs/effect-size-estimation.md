@@ -10,7 +10,7 @@ has_children: false
 
 Workflows 1 and 2 use **score mode** to screen the whole genome. For each chromosome and each quantile $\tau$, GRAB fits a null smoothed quantile regression model without the variant. It uses that model to test $H_0: \gamma(\tau) = 0$ for every variant on the chromosome. Reusing the null model makes it practical to test millions of variants, and the saddlepoint approximation keeps rare-variant $p$-values calibrated. The score test gives a $p$-value but does not estimate the effect size.
 
-Use **Wald mode** (`--spasqr-mode wald`) to estimate effects at a short list of variants, such as genome-wide significant hits from score mode or variants of particular interest. For each variant and quantile, GRAB fits the full model with the variant as a covariate. It reports the estimated effect $\hat\gamma(\tau)$, its standard error, and a Wald $p$-value. It also tests whether the effect is the same across quantiles. These additional model fits make a genome-wide run computationally expensive.
+Use **Wald mode** (`--spasqr-mode wald`) to estimate effects at a short list of variants, such as genome-wide significant hits from score mode or variants of particular interest. For each variant and quantile, GRAB fits the full model with the variant as a covariate. It reports the estimated effect $\hat\gamma(\tau)$, its standard error, and a Wald $p$-value. It also tests whether the effect is the same across quantiles. These additional model fits make a genome-wide run computationally infeasible.
 
 ## Complete pipeline
 
