@@ -74,7 +74,7 @@ As in score mode, `--output-z` adds the optional `Z_tau` block, for 50 columns i
 | `HET_Q`, `LOG10P_HET` | Wald statistic for that hypothesis and its $p$-value, reported as $-\log_{10}p$. With $K$ quantiles, `HET_Q` follows a $\chi^2$ distribution with $K-1$ degrees of freedom when the effect is the same at all quantiles. |
 | `Z_tau<τ>` | Written with `--output-z`. Wald $Z$-score. |
 
-The heterogeneity test relies on the asymptotic normality of the effect estimates, so it is run only for variants with MAF at least `--spasqr-het-min-maf` (default 0.01). Below this threshold, `BETA_HOM`, `SE_HOM`, `HET_Q`, and `LOG10P_HET` are `NA`; the per-quantile results are unaffected.
+The heterogeneity test relies on the asymptotic normality of the effect estimates and may not be well calibrated for rare variants, so it is run only for variants with MAF at least `--spasqr-het-min-maf` (default 0.01). Below this threshold, `BETA_HOM`, `SE_HOM`, `HET_Q`, and `LOG10P_HET` are `NA`; the per-quantile results are unaffected.
 
 Plotting `BETA_tau` against the quantile level with error bars of ±1.96 × `SE_tau` gives the quantile-effect profile of a variant.
 

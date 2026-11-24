@@ -225,7 +225,7 @@ Optional:
 
 | Flag | Default | What it does |
 | --- | --- | --- |
-| `--pred-list` | — | LOCO PGS prediction list. Omit to run without an offset (valid but much less powerful). |
+| `--pred-list` | — | LOCO PGS prediction list. Omit to run without an offset. |
 | `--pheno-transform` | depends on the LOCO PGS | Transformation GRAB applies to the trait: `int`, `standardize`, or `raw` (none). Defaults to `raw` with an LDAK-KVIK LOCO PGS and to `int` without `--pred-list`; always `standardize` with a REGENIE LOCO PGS. See [LOCO PGS scale](#loco-pgs-scale). |
 | `--pheno-name` | all trait columns | Traits to test, comma-separated. |
 | `--covar` | — | Covariate file; may be the same file as `--pheno`. |
