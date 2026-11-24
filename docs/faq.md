@@ -25,12 +25,13 @@ has_children: false
 
 ### Which `--pheno-transform` should I use?
 
-It has to put the trait on the same scale as the LOCO PGS:
+In most cases, none. Pass GRAB the same phenotype file and covariates that were used to train the LOCO PGS; GRAB detects the LOCO file format and puts the trait on the scale of the LOCO PGS:
 
-| LOCO PGS trained on … | `--pheno-transform` |
+| LOCO PGS from | Transformation GRAB applies |
 | ---------------- | ------------------- |
-| RINT $Y$ (recommended) | `int` (default) |
-| Raw $Y$, LDAK-KVIK — PGS on the original trait scale | `raw` |
-| Raw $Y$, REGENIE — PGS on a standardized scale | `standardize` |
-| No LOCO PGS (omitting `--pred-list`) | `standardize` |
+| LDAK-KVIK — PGS on the scale of the training trait | `raw` by default (trait used as supplied); an explicit `--pheno-transform` is honored |
+| REGENIE — PGS on the scale of the covariate-adjusted, unit-variance trait | always `standardize`, followed by division by the standard deviation of the trait's residuals on the covariates; other values are overridden with a warning |
+| No LOCO PGS (omitting `--pred-list`) | `int` by default |
+
+See [LOCO PGS scale]({{ site.baseurl }}/docs/workflow-1.html#loco-pgs-scale) for details.
 

@@ -54,7 +54,7 @@ binary — a single C++ executable that runs on Linux, macOS, and Windows.
    cohorts with strong relatedness.
 
 3. **(Optional) Effect-size estimation.** Re-run with
-   `--spasqr-mode wald` to obtain effect size estimates and their standard errors.
+   `--spasqr-mode wald` to obtain effect size estimates and their standard errors, and to test whether the effect differs across quantiles.
 
 ## Where to go next
 

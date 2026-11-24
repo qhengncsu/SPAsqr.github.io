@@ -55,7 +55,6 @@ EOF
     --covar simu_geno.pheno   --covar-name MALE,PC1,PC2,PC3,PC4 \
     --pred-list simu_geno_ldak_pred.list \
     --spasqr-taus 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9 \
-    --pheno-transform int \
     --threads 8 \
     --out spasqr_results
 ```
@@ -119,16 +118,15 @@ GRAB locates the LOCO PGS files through a **prediction list**, a two-column text
     --covar simu_geno.pheno   --covar-name MALE,PC1,PC2,PC3,PC4 \
     --pred-list simu_geno_ldak_pred.list \
     --spasqr-taus 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9 \
-    --pheno-transform int \
     --threads 8 \
     --out spasqr_results
 ```
 
-Finally we run SPA<sub>SQR</sub>. Null-model fitting and association testing happen in a single call. `--spasqr-taus` sets the quantile levels to test, and `--pheno-transform int` makes GRAB apply RINT to the trait it reads. Here it is redundant, since `simu_geno_int.txt` is already RINT-transformed (see [Raw phenotypes](#raw-phenotypes-without-rint) if you skip RINT). GRAB writes one result file per trait: `spasqr_results.Quantitative1.SPAsqr` and `spasqr_results.Quantitative2.SPAsqr`.
+Finally we run SPA<sub>SQR</sub>. Null-model fitting and association testing happen in a single call. `--spasqr-taus` sets the quantile levels to test. GRAB reads the same phenotype file that was used to train the LOCO PGS. GRAB writes one result file per trait: `spasqr_results.Quantitative1.SPAsqr` and `spasqr_results.Quantitative2.SPAsqr`.
 
 ## Output format
 
-Each result file has one row per variant. With nine quantiles it has 46 columns: 10 fixed columns with variant information and the combined $p$-value, followed by four blocks of nine per-quantile columns (`LOG10P_tau`, `Z_tau`, `Z_Norm_tau`, `SPA_STATUS_tau`). All $p$-values are reported as $-\log_{10}p$, so larger is more significant; the genome-wide threshold $p < 5\times10^{-8}$ corresponds to `LOG10P > 7.30`, and the linear $p$-value is `10^(-LOG10P)`. Rows for `SNP_1428` and `SNP_2170` of `spasqr_results.Quantitative1.SPAsqr`:
+Each result file has one row per variant. With nine quantiles the default output has 28 columns: 10 fixed columns with variant information and the combined $p$-value, followed by two blocks of nine per-quantile columns (`LOG10P_tau`, `Z_Norm_tau`). Adding `--output-z` and `--output-spa-status` to the command writes two more blocks (`Z_tau`, `SPA_STATUS_tau`), for 46 columns in total. All $p$-values are reported as $-\log_{10}p$, so larger is more significant; the genome-wide threshold $p < 5\times10^{-8}$ corresponds to `LOG10P > 7.30`, and the linear $p$-value is `10^(-LOG10P)`. Rows for `SNP_1428` and `SNP_2170` of `spasqr_results.Quantitative1.SPAsqr`:
 
 ```
 CHROM  POS     ID        REF  ALT  MISS_RATE  ALT_FREQ  MAC   LOG10P_HWE  LOG10P_CCT
@@ -143,9 +141,9 @@ LOG10P_tau0.1  LOG10P_tau0.2  LOG10P_tau0.3  LOG10P_tau0.4  LOG10P_tau0.5  LOG10
 ```
 
 ```
-Z_tau0.1  Z_tau0.2  Z_tau0.3  Z_tau0.4  Z_tau0.5  Z_tau0.6  Z_tau0.7  Z_tau0.8  Z_tau0.9
-+4.75     +5.66     +5.61     +5.35     +5.11     +4.94     +4.82     +4.77     +4.81
--5.06     -4.95     -4.51     -3.99     -3.60     -3.42     -3.45     -3.59     -3.56
+Z_Norm_tau0.1  Z_Norm_tau0.2  Z_Norm_tau0.3  Z_Norm_tau0.4  Z_Norm_tau0.5  Z_Norm_tau0.6  Z_Norm_tau0.7  Z_Norm_tau0.8  Z_Norm_tau0.9
++4.74          +5.66          +5.61          +5.35          +5.11          +4.94          +4.82          +4.77          +4.81
+-5.08          -4.96          -4.51          -3.99          -3.60          -3.42          -3.45          -3.59          -3.56
 ```
 
 | Columns | Meaning |
@@ -153,9 +151,9 @@ Z_tau0.1  Z_tau0.2  Z_tau0.3  Z_tau0.4  Z_tau0.5  Z_tau0.6  Z_tau0.7  Z_tau0.8  
 | `LOG10P_HWE` | $-\log_{10}$ of the Hardy–Weinberg equilibrium $p$-value. |
 | `LOG10P_CCT` | $-\log_{10}$ of the Cauchy-combined $p$-value across all quantiles. Computed in the log domain, so it stays finite even when $p$ would underflow below $10^{-308}$. |
 | `LOG10P_tau<τ>` | $-\log_{10}$ of the saddlepoint $p$-value at each quantile. |
-| `Z_tau<τ>` | Signed $Z$-score consistent with `LOG10P_tau`: `sign(Z_Norm_tau) × Φ⁻¹(1 − p/2)`. |
-| `Z_Norm_tau<τ>` | Raw score statistic $S/\sqrt{\operatorname{Var}(S)}$, before saddlepoint correction. Nearly identical to `Z_tau` for common variants; differs for rare ones. |
-| `SPA_STATUS_tau<τ>` | How the $p$-value at that quantile was obtained: `0` saddlepoint; `1` normal approximation, by design when $\lvert Z\rvert$ is below the saddlepoint cutoff (`--spa-z-threshold`, default 2); `2` saddlepoint in a numerically degenerate but valid limit; `3`–`6` saddlepoint failed and the normal tail was substituted; `7`–`8` no test (`LOG10P` is `NA`). Keep rows with `SPA_STATUS_tau ≤ 2` when judging significance. |
+| `Z_Norm_tau<τ>` | Raw score statistic $S/\sqrt{\operatorname{Var}(S)}$, before saddlepoint correction. |
+| `Z_tau<τ>` | Written with `--output-z`. Signed $Z$-score consistent with `LOG10P_tau`: `sign(Z_Norm_tau) × Φ⁻¹(1 − p/2)`. Nearly identical to `Z_Norm_tau` for common variants; differs for rare ones. |
+| `SPA_STATUS_tau<τ>` | Written with `--output-spa-status`. How the $p$-value at that quantile was obtained: `0` saddlepoint; `1` normal approximation, by design when $\lvert Z\rvert$ is below the saddlepoint cutoff (`--spa-z-threshold`, default 2); `2` saddlepoint in a numerically degenerate but valid limit; `3`–`6` saddlepoint failed and the normal tail was substituted; `7`–`8` no test (`LOG10P` is `NA`). Keep rows with `SPA_STATUS_tau ≤ 2` when judging significance. |
 
 ## Other options
 
@@ -180,18 +178,27 @@ REGENIE can replace steps 2 and 3 with a single call, because it writes the pred
     --covar simu_geno.pheno   --covar-name MALE,PC1,PC2,PC3,PC4 \
     --pred-list simu_geno_regenie_pred.list \
     --spasqr-taus 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9 \
-    --pheno-transform int \
     --threads 8 \
     --out spasqr_results
 ```
 
-REGENIE's `.loco` files are the transpose of LDAK-KVIK's: one row per chromosome and one column per subject, with `FID` and `IID` joined by an underscore. GRAB detects which format it is reading from the header.
+REGENIE's `.loco` files are the transpose of LDAK-KVIK's: one row per chromosome and one column per subject, with `FID` and `IID` joined by an underscore. GRAB detects which format it is reading from the header. REGENIE also reports its LOCO PGS on a different scale from LDAK-KVIK, which GRAB handles automatically (see [LOCO PGS scale](#loco-pgs-scale)).
+
+### LOCO PGS scale
+
+LDAK-KVIK and REGENIE report their LOCO PGS on different scales. GRAB detects the format of each LOCO file and prepares the trait accordingly before subtracting the PGS:
+
+| LOCO PGS from | Scale of the LOCO PGS | What GRAB does to the trait |
+| --- | --- | --- |
+| LDAK-KVIK | The scale of the trait used in training. | Nothing; the trait is used as supplied (`--pheno-transform raw`). |
+| REGENIE | REGENIE regresses out the covariates and scales the residuals to unit variance. | Standardizes the trait (`--pheno-transform standardize`), then divides it by the standard deviation of its residuals from a linear regression on the covariates. |
+| None (no `--pred-list`) | — | Applies RINT (`--pheno-transform int`). |
+
+So no flag is needed: pass GRAB the same phenotype file and covariates that were used to train the LOCO PGS. An explicit `--pheno-transform` is honored with LDAK-KVIK and overridden (with a warning) with REGENIE.
 
 ### Raw phenotypes (without RINT)
 
-To avoid RINT, skip step 1 and feed the raw `simu_geno.pheno` to LDAK-KVIK or REGENIE directly. The two tools report their LOCO PGS on different scales, so `--pheno-transform` depends on which one you used.
-
-**LDAK-KVIK** reports the LOCO PGS on the original trait scale. Pass `--pheno-transform raw` so that GRAB leaves the trait untouched:
+To avoid RINT, skip step 1 and feed the raw `simu_geno.pheno` to LDAK-KVIK or REGENIE, then pass the same raw file to GRAB:
 
 ```bash
 ./grab2 --method SPAsqr \
@@ -199,25 +206,12 @@ To avoid RINT, skip step 1 and feed the raw `simu_geno.pheno` to LDAK-KVIK or RE
     --pheno simu_geno.pheno --pheno-name Quantitative1,Quantitative2 \
     --covar simu_geno.pheno --covar-name MALE,PC1,PC2,PC3,PC4 \
     --pred-list simu_geno_ldak_pred.list \
-    --pheno-transform raw \
     --spasqr-taus 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9 \
     --threads 8 \
     --out spasqr_results
 ```
 
-**REGENIE** regresses out the covariates and scales the residuals to unit variance, so its LOCO PGS live on a standardized scale. Pass `--pheno-transform standardize`:
-
-```bash
-./grab2 --method SPAsqr \
-    --bfile simu_geno \
-    --pheno simu_geno.pheno --pheno-name Quantitative1,Quantitative2 \
-    --covar simu_geno.pheno --covar-name MALE,PC1,PC2,PC3,PC4 \
-    --pred-list simu_geno_regenie_pred.list \
-    --pheno-transform standardize \
-    --spasqr-taus 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9 \
-    --threads 8 \
-    --out spasqr_results
-```
+Here the prediction list must point to LOCO PGS trained on the raw traits.
 
 ### `grab2 --method SPAsqr` flags
 
@@ -235,12 +229,14 @@ Optional:
 | Flag | Default | What it does |
 | --- | --- | --- |
 | `--pred-list` | — | LOCO PGS prediction list. Omit to run without an offset (valid but much less powerful). |
-| `--pheno-transform` | `int` | Transformation GRAB applies to the trait: `int`, `standardize`, or `raw` (none). **Must match the transformation applied to the trait during LOCO PGS training.** Redundant when the input trait is already RINT-transformed, as in this workflow. |
+| `--pheno-transform` | depends on the LOCO PGS | Transformation GRAB applies to the trait: `int`, `standardize`, or `raw` (none). Defaults to `raw` with an LDAK-KVIK LOCO PGS and to `int` without `--pred-list`; always `standardize` with a REGENIE LOCO PGS. See [LOCO PGS scale](#loco-pgs-scale). |
 | `--pheno-name` | all trait columns | Traits to test, comma-separated. |
 | `--covar` | — | Covariate file; may be the same file as `--pheno`. |
 | `--covar-name` | — | Covariate columns, comma-separated. |
 | `--spasqr-taus` | `0.1,0.3,0.5,0.7,0.9` | Quantile levels to test (max 20). |
 | `--spasqr-h-scale` | `3` | Bandwidth divisor, `h = IQR / k`. Larger = less smoothing. |
+| `--output-z` | off | Also write the `Z_tau` columns. |
+| `--output-spa-status` | off | Also write the `SPA_STATUS_tau` columns. |
 | `--threads` | `1` | Number of threads. |
 
 SNP filters:

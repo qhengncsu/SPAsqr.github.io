@@ -50,7 +50,6 @@ EOF
     --pred-list simu_geno_ldak_pred.list \
     --sp-grm-plink2 simu_geno.grm.sp \
     --spasqr-taus 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9 \
-    --pheno-transform int \
     --threads 8 \
     --out spasqr_results
 ```
@@ -91,7 +90,6 @@ $ head simu_geno.grm.sp
     --pred-list simu_geno_ldak_pred.list \
     --sp-grm-plink2 simu_geno.grm.sp \
     --spasqr-taus 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9 \
-    --pheno-transform int \
     --threads 8 \
     --out spasqr_results
 ```
@@ -127,7 +125,6 @@ The file is tab-delimited with the header `IID1 IID2 VALUE`, where the IIDs matc
     --pred-list simu_geno_ldak_pred.list \
     --sp-grm-grab simu_geno.grm.grab \
     --spasqr-taus 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9 \
-    --pheno-transform int \
     --threads 8 \
     --out spasqr_results
 ```
