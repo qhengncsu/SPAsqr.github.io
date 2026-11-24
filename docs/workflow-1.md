@@ -211,6 +211,17 @@ To analyze the traits on their original scale, skip step 1. Use `simu_geno.pheno
 
 Make sure the prediction list points to the LOCO PGS trained on the raw traits.
 
+The table below summarizes how to choose the phenotype file and transformation option for analyses with or without RINT, accounting for the scale of the LOCO PGS when supplied.
+
+| Apply RINT? | LOCO PGS supplied via `--pred-list` | File to pass to `--pheno` | `--pheno-transform` |
+|---|---|---|---|
+| Yes | LDAK-KVIK, trained on `simu_geno_int.txt` | `simu_geno_int.txt` | Omit (GRAB defaults to `raw`) |
+| Yes | REGENIE, trained on `simu_geno_int.txt` | `simu_geno_int.txt` | Omit (GRAB defaults to `standardize`) |
+| Yes | None | `simu_geno.pheno` | Omit (GRAB defaults to `int`) |
+| No | LDAK-KVIK, trained on `simu_geno.pheno` | `simu_geno.pheno` | Omit (GRAB defaults to `raw`) |
+| No | REGENIE, trained on `simu_geno.pheno` | `simu_geno.pheno` | Omit (GRAB defaults to `standardize`) |
+| No | None | `simu_geno.pheno` | Specify `--pheno-transform raw` |
+
 ### `grab2 --method SPAsqr` flags
 
 Required:
