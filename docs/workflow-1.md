@@ -183,7 +183,7 @@ REGENIE writes both the LOCO PGS and the prediction list, so one command replace
     --out spasqr_results
 ```
 
-In REGENIE's `.loco` files, each row is a chromosome and each column is a participant, the reverse of the layout in LDAK-KVIK. REGENIE joins `FID` and `IID` with an underscore. GRAB recognizes the format from the header. When you supply the LOCO PGS from LDAK-KVIK, GRAB uses the phenotype as supplied. When you supply the LOCO PGS from REGENIE, GRAB standardizes the phenotype and divides it by the residual standard deviation after covariate adjustment. See also [phenotype transformation](#loco-pgs-scale).
+In REGENIE's `.loco` files, each row is a chromosome and each column is a participant, the reverse of the layout in LDAK-KVIK. REGENIE joins `FID` and `IID` with an underscore. GRAB recognizes the format from the header. When you supply the LOCO PGS from LDAK-KVIK, GRAB uses the phenotype as supplied. When you supply the LOCO PGS from REGENIE, GRAB standardizes the phenotype and divides it by the residual standard deviation after covariate adjustment. This is because LDAK-KVIK reports the LOCO PGS on the scale of the training phenotype, whereas REGENIE reports it in units of the residual standard deviation after covariate adjustment. See also [phenotype transformation](#loco-pgs-scale).
 
 ### Raw phenotypes (without RINT)
 
