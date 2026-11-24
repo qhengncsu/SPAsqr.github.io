@@ -211,7 +211,7 @@ To analyze the traits on their original scale, skip step 1. Use `simu_geno.pheno
 
 Make sure the prediction list points to the LOCO PGS trained on the raw traits.
 
-The table below summarizes how to choose the phenotype file and transformation option for analyses with or without RINT, accounting for the scale of the LOCO PGS when supplied.
+The table below summarizes how to choose the phenotype file and transformation option for analyses with or without RINT.
 
 | Apply RINT? | LOCO PGS supplied via `--pred-list` | File to pass to `--pheno` | `--pheno-transform` |
 |---|---|---|---|
