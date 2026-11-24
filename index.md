@@ -43,6 +43,6 @@ A linear GWAS estimates the average effect of each variant on a trait. Quantile 
 ## Getting help
 {: #ai-agents-and-llms-can-help-you }
 
-If you run into trouble installing GRAB or running an example, try sharing the tutorial URL and the error message with Claude Code or Codex. When we tested them, each tool was able to install GRAB and run every example using just the URL.
+You can give this tutorial to an AI agent as a step-by-step guide to running SPA<sub>SQR</sub>. In our tests, we gave Claude Code and Codex just the tutorial URL. Both installed GRAB and ran every example successfully. If you get stuck on a command, share the URL and the error message with the agent.
 
 We welcome bug reports and suggestions at heng.qiang6@gmail.com.
