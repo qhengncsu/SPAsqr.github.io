@@ -12,7 +12,7 @@ SPA<sub>SQR</sub> uses smoothed quantile regression to test genetic variants for
 
 ## What is quantile regression GWAS?
 
-A linear GWAS estimates the average effect of each variant on a trait. Quantile regression (QR) estimates its effect at different points in the trait distribution. For example, a variant may have a stronger effect at the upper quantiles than near the median. Looking across quantiles can reveal heterogeneous or subgroup-specific effects that are hard to detect from the mean alone.
+A linear GWAS estimates the average effect of each variant on a trait. Quantile regression (QR) estimates its effect at different points in the trait distribution. For example, a variant may have a stronger effect at the upper quantiles than near the median. Looking across quantiles can reveal heterogeneous or subgroup-specific effects that are hard to detect from the mean alone. QR GWAS results are also generally less sensitive than linear GWAS results to monotonic transformations of the trait, such as rank-based inverse normal transformation.
 
 ## Why SPA<sub>SQR</sub>?
 
@@ -28,7 +28,7 @@ A linear GWAS estimates the average effect of each variant on a trait. Quantile 
 
 1. **Workflow 1 — LOCO PGS + SPA<sub>SQR</sub>.** For cohorts with little relatedness, we recommend training the LOCO PGS with [LDAK-KVIK](https://dougspeed.com/ldak-kvik/) or [REGENIE](https://rgcgithub.github.io/regenie/), then passing the prediction list to `grab --method SPAsqr` with `--pred-list`.
 
-2. **Workflow 2 — LOCO PGS + GRM + SPA<sub>SQR</sub>.** For cohorts with strong relatedness, we recommend adding a sparse GRM to account for relatedness when estimating the variance of the score statistic. Build the matrix with [PLINK 2](https://www.cog-genomics.org/plink/2.0/) and pass it to GRAB with `--sp-grm-plink2`. For admixed cohorts, we recommend using the LOCO PGS alone because the GRM can also reflect population structure.
+2. **Workflow 2 — LOCO PGS + GRM + SPA<sub>SQR</sub>.** For cohorts with strong relatedness, we recommend adding a sparse GRM to account for relatedness when estimating the variance of the score statistic. Build the matrix with [PLINK 2](https://www.cog-genomics.org/plink/2.0/) and pass it to GRAB with `--sp-grm-plink2`. For admixed cohorts, we recommend using the LOCO PGS alone because the GRM is confounded with population structure.
 
 3. **Effect-size estimation (optional).** For selected variants, run GRAB with `--spasqr-mode wald` to estimate the effect and its standard error at each quantile and to test whether the effect varies across quantiles.
 
