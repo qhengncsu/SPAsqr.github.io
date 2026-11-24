@@ -27,7 +27,7 @@ Download the archive for your platform from the [GRAB releases page](https://git
 
 ## External tools
 
-The tools you need depend on your workflow. Use LDAK-KVIK or REGENIE to train the LOCO polygenic scores. Workflow 2 also uses PLINK 2 to build a sparse GRM.
+The tools you need depend on your workflow. Use LDAK-KVIK or REGENIE to train the LOCO PGS. Workflow 2 also uses PLINK 2 to build a sparse GRM.
 
 - [**LDAK-KVIK**](https://dougspeed.com/ldak-kvik/) — download the prebuilt binary from the LDAK site.
 - [**REGENIE**](https://rgcgithub.github.io/regenie/) — `conda install -c conda-forge -c bioconda regenie`.

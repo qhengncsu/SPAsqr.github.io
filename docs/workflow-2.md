@@ -2,7 +2,7 @@
 layout: default
 title: "Workflow 2: LOCO PGS + GRM + SPA<sub>SQR</sub>"
 nav_order: 4
-description: "End-to-end recipe for running SPAsqr with a LOCO polygenic score and a sparse GRM."
+description: "End-to-end recipe for running SPAsqr with a LOCO PGS and a sparse GRM."
 has_children: false
 ---
 
@@ -102,7 +102,7 @@ Add `--sp-grm-plink2 simu_geno.grm.sp` to the command from Workflow 1. GRAB uses
 
 ### REGENIE instead of LDAK-KVIK
 
-If you train the scores with REGENIE as described in Workflow 1, use `--pred-list simu_geno_regenie_pred.list` in step 5. This is the only change you need to make.
+If you train the LOCO PGS with REGENIE as described in Workflow 1, use `--pred-list simu_geno_regenie_pred.list` in step 5. This is the only change you need to make.
 
 ### GRM from other tools: `--sp-grm-grab`
 

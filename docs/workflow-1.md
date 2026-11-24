@@ -2,13 +2,13 @@
 layout: default
 title: "Workflow 1: LOCO PGS + SPA<sub>SQR</sub>"
 nav_order: 3
-description: "End-to-end recipe for running SPAsqr with a LOCO polygenic score (without a sparse GRM)."
+description: "End-to-end recipe for running SPAsqr with a LOCO PGS (without a sparse GRM)."
 has_children: false
 ---
 
 # **Workflow 1: LOCO PGS + SPA<sub>SQR</sub>**
 
-SPA<sub>SQR</sub> uses **leave-one-chromosome-out (LOCO) polygenic scores (PGS)** to account for relatedness and substantially improve power. Before fitting the null model for a chromosome, it subtracts the score trained on all other chromosomes from the trait. Polygenic scores from linear models work well as offsets. Here we use [**LDAK-KVIK**](https://dougspeed.com/ldak-kvik/) or [**REGENIE**](https://rgcgithub.github.io/regenie/) to train them.
+SPA<sub>SQR</sub> uses **leave-one-chromosome-out (LOCO) polygenic scores (PGS)** to account for relatedness and substantially improve power. Before fitting the null model for a chromosome, it subtracts the LOCO PGS trained on all other chromosomes from the trait. LOCO PGS from linear models work well as offsets. Here we use [**LDAK-KVIK**](https://dougspeed.com/ldak-kvik/) or [**REGENIE**](https://rgcgithub.github.io/regenie/) to train them.
 
 ## Inputs
 
@@ -160,7 +160,7 @@ Z_Norm_tau0.1  Z_Norm_tau0.2  Z_Norm_tau0.3  Z_Norm_tau0.4  Z_Norm_tau0.5  Z_Nor
 
 ### REGENIE instead of LDAK-KVIK
 
-REGENIE writes both the scores and the prediction list, so one command replaces steps 2 and 3.
+REGENIE writes both the LOCO PGS and the prediction list, so one command replaces steps 2 and 3.
 
 ```bash
 # 2. Train the LOCO PGS with REGENIE (writes simu_geno_regenie_pred.list)
@@ -187,16 +187,16 @@ In REGENIE's `.loco` files, each row is a chromosome and each column is a partic
 
 ### LOCO PGS scale
 
-GRAB subtracts the chromosome-specific LOCO PGS from the phenotype before testing variants. For that subtraction to make sense, the phenotype and the score must be in the same units. **Give GRAB the same phenotype file and covariates you used to train the scores.** In this example, we applied RINT before training, so both LDAK-KVIK and REGENIE workflows use `--pheno simu_geno_int.txt` for association testing. GRAB recognizes the score format and handles the scaling as follows.
+GRAB subtracts the chromosome-specific LOCO PGS from the phenotype before testing variants. The phenotype and the LOCO PGS must be in the same scale. **Give GRAB the same phenotype file and covariates you used to train the LOCO PGS.** In this example, we applied RINT before training, so both LDAK-KVIK and REGENIE workflows use `--pheno simu_geno_int.txt` for association testing. GRAB recognizes the LOCO PGS file format and handles the scaling as follows.
 
-- **LDAK-KVIK** reports scores in the units of the training phenotype. For example, if you train on height in centimeters, the score is in centimeters. If you train on height after RINT, the score is on the RINT scale. GRAB therefore uses the phenotype values in your file as supplied. Its default setting, `--pheno-transform raw`, means “use the values in this file,” even when those values have already undergone RINT.
-- **REGENIE** reports scores in units of the residual standard deviation after adjustment for the training covariates. GRAB first standardizes the supplied phenotype, then regresses it on the covariates to estimate that residual standard deviation. It divides the standardized phenotype by this value before subtracting the score. The regression here supplies the scale factor. GRAB still estimates the covariate effects in the quantile regression. This scaling is automatic, including when the input file already contains RINT values.
+- **LDAK-KVIK** reports the LOCO PGS in the units of the training phenotype. For example, if you train on height in centimeters, the LOCO PGS is in centimeters. If you train on height after RINT, the LOCO PGS is on the RINT scale. GRAB therefore uses the phenotype values in your file as supplied. Its default setting, `--pheno-transform raw`, means “use the values in this file,” even when those values have already undergone RINT.
+- **REGENIE** reports the LOCO PGS in units of the residual standard deviation after adjustment for the training covariates. GRAB first standardizes the supplied phenotype, then regresses it on the covariates to estimate that residual standard deviation. It divides the standardized phenotype by this value before subtracting the LOCO PGS. The regression here supplies the scale factor. GRAB still estimates the covariate effects in the quantile regression. This scaling is automatic, including when the input file already contains RINT values.
 
-If you omit `--pred-list`, there is no score to subtract. In that case GRAB applies RINT by default (`--pheno-transform int`).
+If you omit `--pred-list`, there is no LOCO PGS to subtract. In that case GRAB applies RINT by default (`--pheno-transform int`).
 
 ### Raw phenotypes (without RINT)
 
-To analyze the traits on their original scale, skip step 1. Use `simu_geno.pheno` to train the scores with LDAK-KVIK or REGENIE, then pass the same file to GRAB.
+To analyze the traits on their original scale, skip step 1. Use `simu_geno.pheno` to train the LOCO PGS with LDAK-KVIK or REGENIE, then pass the same file to GRAB.
 
 ```bash
 ./grab2 --method SPAsqr \
@@ -209,7 +209,7 @@ To analyze the traits on their original scale, skip step 1. Use `simu_geno.pheno
     --out spasqr_results
 ```
 
-Make sure the prediction list points to the scores trained on the raw traits.
+Make sure the prediction list points to the LOCO PGS trained on the raw traits.
 
 ### `grab2 --method SPAsqr` flags
 
