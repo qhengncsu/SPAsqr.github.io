@@ -24,13 +24,10 @@ GRAB treats a blank cell or any of the following values as missing: `NA`, `na`, 
 
 ### Which `--pheno-transform` should I use?
 
-In most cases, you can omit this option. Supply the phenotype file and covariates you used to train the LOCO PGS. GRAB detects the prediction file format and puts the trait on the appropriate scale.
+If you supply a LOCO PGS, use the same phenotype file and covariates you used for training and leave `--pheno-transform` unset. For example, if you trained on `simu_geno_int.txt` after RINT, pass that file to GRAB as well.
 
-| LOCO PGS from | Transformation GRAB applies |
-| ---------------- | ------------------- |
-| LDAK-KVIK (PGS on the training trait scale) | GRAB uses the trait as supplied (`raw`) unless you specify a transformation with `--pheno-transform`. |
-| REGENIE (PGS on the scale of the covariate-adjusted, unit-variance trait) | GRAB applies `standardize`, then divides the trait by the standard deviation of its residuals from regression on the covariates. If you request a different transformation, GRAB overrides it and issues a warning. |
-| No LOCO PGS (`--pred-list` omitted) | GRAB applies `int` by default. |
+- **LDAK-KVIK scores** are already on the scale of the training phenotype. By default GRAB uses the file as supplied (`raw`). You can override this setting explicitly.
+- **REGENIE scores** are on the scale of the covariate-adjusted, unit-variance trait. GRAB standardizes and rescales the phenotype automatically. If you specify a transformation other than `standardize`, GRAB overrides it and issues a warning.
+- **Without a LOCO PGS**, GRAB applies RINT by default (`int`).
 
-See [LOCO PGS scale]({{ site.baseurl }}/docs/workflow-1.html#loco-pgs-scale) for details.
-
+See [LOCO PGS scale]({{ site.baseurl }}/docs/workflow-1.html#loco-pgs-scale) for how GRAB matches the phenotype to each type of score.

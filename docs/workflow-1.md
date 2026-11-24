@@ -122,7 +122,7 @@ The **prediction list** tells GRAB where to find each trait's LOCO PGS file. It 
     --out spasqr_results
 ```
 
-Use the same phenotype file you used to train the LOCO PGS, and specify the quantiles to test with `--spasqr-taus`. A single GRAB command fits the null models, tests the variants, and writes a result file for each trait. In this example, the files are `spasqr_results.Quantitative1.SPAsqr` and `spasqr_results.Quantitative2.SPAsqr`.
+Use the same phenotype file you used to train the LOCO PGS (see [LOCO PGS scale](#loco-pgs-scale)), and specify the quantiles to test with `--spasqr-taus`. A single GRAB command fits the null models, tests the variants, and writes a result file for each trait. In this example, the files are `spasqr_results.Quantitative1.SPAsqr` and `spasqr_results.Quantitative2.SPAsqr`.
 
 ## Output format
 
@@ -187,13 +187,12 @@ In REGENIE's `.loco` files, each row is a chromosome and each column is a partic
 
 ### LOCO PGS scale
 
-The scale of the LOCO PGS depends on which program trained it. GRAB uses the file format to determine how to prepare the trait before subtracting the score.
+GRAB subtracts the chromosome-specific LOCO PGS from the phenotype before testing variants. For that subtraction to make sense, the phenotype and the score must be in the same units. **Give GRAB the same phenotype file and covariates you used to train the scores.** In this example, we applied RINT before training, so both LDAK-KVIK and REGENIE workflows use `--pheno simu_geno_int.txt` for association testing. GRAB recognizes the score format and handles the scaling as follows.
 
-| LOCO PGS from | Scale of the LOCO PGS | What GRAB does to the trait |
-| --- | --- | --- |
-| LDAK-KVIK | The scale of the trait used in training. | Uses the trait as supplied by default (`--pheno-transform raw`). |
-| REGENIE | REGENIE regresses out the covariates and scales the residuals to unit variance. | Standardizes the trait (`--pheno-transform standardize`), then divides it by the standard deviation of its residuals from a linear regression on the covariates. |
-| None (no `--pred-list`) | — | Applies RINT (`--pheno-transform int`). |
+- **LDAK-KVIK** reports scores in the units of the training phenotype. For example, if you train on height in centimeters, the score is in centimeters. If you train on height after RINT, the score is on the RINT scale. GRAB therefore uses the phenotype values in your file as supplied. Its default setting, `--pheno-transform raw`, means “use the values in this file,” even when those values have already undergone RINT.
+- **REGENIE** reports scores in units of the residual standard deviation after adjustment for the training covariates. GRAB first standardizes the supplied phenotype, then regresses it on the covariates to estimate that residual standard deviation. It divides the standardized phenotype by this value before subtracting the score. The regression here supplies the scale factor. GRAB still estimates the covariate effects in the quantile regression. This scaling is automatic, including when the input file already contains RINT values.
+
+If you omit `--pred-list`, there is no score to subtract. In that case GRAB applies RINT by default (`--pheno-transform int`).
 
 ### Raw phenotypes (without RINT)
 
