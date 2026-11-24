@@ -187,12 +187,12 @@ In REGENIE's `.loco` files, each row is a chromosome and each column is a partic
 
 ### LOCO PGS scale
 
-GRAB subtracts the chromosome-specific LOCO PGS from the phenotype before testing variants. The phenotype and the LOCO PGS must be in the same scale. **Give GRAB the same phenotype file and covariates you used to train the LOCO PGS.** In this example, we applied RINT before training, so both LDAK-KVIK and REGENIE workflows use `--pheno simu_geno_int.txt` for association testing. GRAB recognizes the LOCO PGS file format and handles the scaling as follows.
+The phenotype and the LOCO PGS must be in the same scale. Give GRAB the same phenotype file and covariates you used for training, even if you applied RINT before training.
 
-- **LDAK-KVIK** reports the LOCO PGS in the units of the training phenotype. For example, if you train on height in centimeters, the LOCO PGS is in centimeters. If you train on height after RINT, the LOCO PGS is on the RINT scale. GRAB therefore uses the phenotype values in your file as supplied. Its default setting, `--pheno-transform raw`, means “use the values in this file,” even when those values have already undergone RINT.
-- **REGENIE** reports the LOCO PGS in units of the residual standard deviation after adjustment for the training covariates. GRAB first standardizes the supplied phenotype, then regresses it on the covariates to estimate that residual standard deviation. It divides the standardized phenotype by this value before subtracting the LOCO PGS. The regression here supplies the scale factor. GRAB still estimates the covariate effects in the quantile regression. This scaling is automatic, including when the input file already contains RINT values.
+- **LDAK-KVIK** reports the LOCO PGS on the training phenotype scale. GRAB uses the phenotype as supplied by default.
+- **REGENIE** reports the LOCO PGS in units of the covariate-adjusted residual standard deviation. GRAB automatically rescales the phenotype to match.
 
-If you omit `--pred-list`, there is no LOCO PGS to subtract. In that case GRAB applies RINT by default (`--pheno-transform int`).
+Without `--pred-list`, GRAB applies RINT by default.
 
 ### Raw phenotypes (without RINT)
 
