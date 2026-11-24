@@ -126,7 +126,7 @@ Finally we run SPA<sub>SQR</sub>. Null-model fitting and association testing hap
 
 ## Output format
 
-Each result file has one row per variant. With nine quantiles the default output has 28 columns: 10 fixed columns with variant information and the combined $p$-value, followed by two blocks of nine per-quantile columns (`LOG10P_tau`, `Z_Norm_tau`). Adding `--output-z` and `--output-spa-status` to the command writes two more blocks (`Z_tau`, `SPA_STATUS_tau`), for 46 columns in total. All $p$-values are reported as $-\log_{10}p$, so larger is more significant; the genome-wide threshold $p < 5\times10^{-8}$ corresponds to `LOG10P > 7.30`, and the linear $p$-value is `10^(-LOG10P)`. Rows for `SNP_1428` and `SNP_2170` of `spasqr_results.Quantitative1.SPAsqr`:
+Each result file has one row per variant. With nine quantiles the default output has 28 columns: 10 fixed columns with variant information and the combined $p$-value, followed by two blocks of nine per-quantile columns (`LOG10P_tau`, `Z_Norm_tau`). Adding `--output-z` to the command writes one more block (`Z_tau`), for 37 columns in total. All $p$-values are reported as $-\log_{10}p$, so larger is more significant; the genome-wide threshold $p < 5\times10^{-8}$ corresponds to `LOG10P > 7.30`, and the linear $p$-value is `10^(-LOG10P)`. Rows for `SNP_1428` and `SNP_2170` of `spasqr_results.Quantitative1.SPAsqr`:
 
 ```
 CHROM  POS     ID        REF  ALT  MISS_RATE  ALT_FREQ  MAC   LOG10P_HWE  LOG10P_CCT
@@ -153,7 +153,6 @@ Z_Norm_tau0.1  Z_Norm_tau0.2  Z_Norm_tau0.3  Z_Norm_tau0.4  Z_Norm_tau0.5  Z_Nor
 | `LOG10P_tau<τ>` | $-\log_{10}$ of the saddlepoint $p$-value at each quantile. |
 | `Z_Norm_tau<τ>` | Raw score statistic $S/\sqrt{\operatorname{Var}(S)}$, before saddlepoint correction. |
 | `Z_tau<τ>` | Written with `--output-z`. Signed $Z$-score consistent with `LOG10P_tau`: `sign(Z_Norm_tau) × Φ⁻¹(1 − p/2)`. Nearly identical to `Z_Norm_tau` for common variants; differs for rare ones. |
-| `SPA_STATUS_tau<τ>` | Written with `--output-spa-status`. How the $p$-value at that quantile was obtained: `0` saddlepoint; `1` normal approximation, by design when $\lvert Z\rvert$ is below the saddlepoint cutoff (`--spa-z-threshold`, default 2); `2` saddlepoint in a numerically degenerate but valid limit; `3`–`6` saddlepoint failed and the normal tail was substituted; `7`–`8` no test (`LOG10P` is `NA`). Keep rows with `SPA_STATUS_tau ≤ 2` when judging significance. |
 
 ## Other options
 
@@ -193,8 +192,6 @@ LDAK-KVIK and REGENIE report their LOCO PGS on different scales. GRAB detects th
 | LDAK-KVIK | The scale of the trait used in training. | Nothing; the trait is used as supplied (`--pheno-transform raw`). |
 | REGENIE | REGENIE regresses out the covariates and scales the residuals to unit variance. | Standardizes the trait (`--pheno-transform standardize`), then divides it by the standard deviation of its residuals from a linear regression on the covariates. |
 | None (no `--pred-list`) | — | Applies RINT (`--pheno-transform int`). |
-
-So no flag is needed: pass GRAB the same phenotype file and covariates that were used to train the LOCO PGS. An explicit `--pheno-transform` is honored with LDAK-KVIK and overridden (with a warning) with REGENIE.
 
 ### Raw phenotypes (without RINT)
 
@@ -236,7 +233,6 @@ Optional:
 | `--spasqr-taus` | `0.1,0.3,0.5,0.7,0.9` | Quantile levels to test (max 20). |
 | `--spasqr-h-scale` | `3` | Bandwidth divisor, `h = IQR / k`. Larger = less smoothing. |
 | `--output-z` | off | Also write the `Z_tau` columns. |
-| `--output-spa-status` | off | Also write the `SPA_STATUS_tau` columns. |
 | `--threads` | `1` | Number of threads. |
 
 SNP filters:

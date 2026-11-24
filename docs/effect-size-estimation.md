@@ -63,7 +63,7 @@ SE_tau0.1      ...  SE_tau0.9
 BETA_HOM  SE_HOM  HET_Q  LOG10P_HET
 ```
 
-As in score mode, `--output-z` and `--output-spa-status` add the optional `Z_tau` and `SPA_STATUS_tau` blocks, for 59 columns in total.
+As in score mode, `--output-z` adds the optional `Z_tau` block, for 50 columns in total.
 
 | Columns | Meaning |
 | --- | --- |
@@ -73,7 +73,6 @@ As in score mode, `--output-z` and `--output-spa-status` add the optional `Z_tau
 | `BETA_HOM`, `SE_HOM` | Common effect estimate and its standard error under the hypothesis that the effect is the same at all quantiles. |
 | `HET_Q`, `LOG10P_HET` | Wald statistic for that hypothesis and its $p$-value, reported as $-\log_{10}p$. With $K$ quantiles, `HET_Q` follows a $\chi^2$ distribution with $K-1$ degrees of freedom when the effect is the same at all quantiles. |
 | `Z_tau<τ>` | Written with `--output-z`. Wald $Z$-score. |
-| `SPA_STATUS_tau<τ>` | Written with `--output-spa-status`. `1` (normal reference) for every quantile that produced a test; `8` with all other cells `NA` when the sandwich variance is unusable. |
 
 The heterogeneity test relies on the asymptotic normality of the effect estimates, so it is run only for variants with MAF at least `--spasqr-het-min-maf` (default 0.01). Below this threshold, `BETA_HOM`, `SE_HOM`, `HET_Q`, and `LOG10P_HET` are `NA`; the per-quantile results are unaffected.
 
@@ -87,4 +86,3 @@ Plotting `BETA_tau` against the quantile level with error bars of ±1.96 × `SE_
 | `--spasqr-h-scale` | `5` | Bandwidth divisor, `h = IQR / k`. Wald mode defaults to a narrower bandwidth than score mode (`5` vs `3`) to reduce smoothing bias. |
 | `--spasqr-het-min-maf` | `0.01` | Minimum MAF for the heterogeneity test. `0` runs the test for every variant. |
 | `--output-z` | off | Also write the `Z_tau` columns. |
-| `--output-spa-status` | off | Also write the `SPA_STATUS_tau` columns. |
